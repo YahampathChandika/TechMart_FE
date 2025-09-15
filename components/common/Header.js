@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth, useCart } from "@/hooks";
 import { ThemeToggle } from "./ThemeToggle";
+import { MiniCartDropdown } from "@/components/customer/MiniCartDropdown";
 import { cn } from "@/lib/utils";
 import { APP_CONFIG, USER_ROLES } from "@/lib/constants";
 
@@ -38,6 +39,7 @@ export const Header = ({ className = "" }) => {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [cartDropdownOpen, setCartDropdownOpen] = useState(false);
 
   const cartStats = getCartStats();
   const currentAuth = user || customer;
@@ -163,19 +165,46 @@ export const Header = ({ className = "" }) => {
 
             {/* Cart icon (customers only) */}
             {isCustomer() && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => router.push("/cart")}
-                className="relative"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {cartStats.itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {cartStats.itemCount}
-                  </span>
-                )}
-              </Button>
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    // Desktop: navigate to cart, Mobile: toggle dropdown
+                    if (window.innerWidth >= 768) {
+                      router.push("/cart");
+                    } else {
+                      setCartDropdownOpen(!cartDropdownOpen);
+                    }
+                  }}
+                  onMouseEnter={() => {
+                    // Only show on hover for desktop
+                    if (window.innerWidth >= 768) {
+                      setCartDropdownOpen(true);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    // Only hide on hover leave for desktop
+                    if (window.innerWidth >= 768) {
+                      setTimeout(() => setCartDropdownOpen(false), 300);
+                    }
+                  }}
+                  className="relative"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  {cartStats.itemCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartStats.itemCount}
+                    </span>
+                  )}
+                </Button>
+
+                {/* Mini Cart Dropdown */}
+                <MiniCartDropdown
+                  isOpen={cartDropdownOpen}
+                  onClose={() => setCartDropdownOpen(false)}
+                />
+              </div>
             )}
 
             {/* User menu or login */}

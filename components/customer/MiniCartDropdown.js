@@ -79,27 +79,6 @@ export const MiniCartDropdown = ({ isOpen, onClose, className = "" }) => {
             <div className="border-t">
               <MiniCartSummary />
             </div>
-
-            {/* Actions */}
-            <div className="p-3 border-t space-y-2">
-              <Link href="/cart" onClick={onClose}>
-                <Button variant="outline" size="sm" className="w-full">
-                  View Full Cart
-                </Button>
-              </Link>
-              <Button
-                size="sm"
-                className="w-full flex items-center gap-2"
-                onClick={() => {
-                  // Future: Navigate to checkout
-                  alert("Checkout coming in Phase 5!");
-                  onClose();
-                }}
-              >
-                Checkout
-                <ArrowRight className="h-3 w-3" />
-              </Button>
-            </div>
           </div>
         )}
       </div>

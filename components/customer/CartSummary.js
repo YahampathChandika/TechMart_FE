@@ -244,9 +244,6 @@ export const MiniCartSummary = ({ className = "" }) => {
         <span>Subtotal ({stats.itemCount} items)</span>
         <span className="font-medium">${stats.subtotal.toFixed(2)}</span>
       </div>
-      <Button size="sm" className="w-full">
-        View Cart
-      </Button>
     </div>
   );
 };
