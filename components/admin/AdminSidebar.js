@@ -107,14 +107,11 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         {!isCollapsed && (
-          <Link href="/admin/dashboard" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">
-                T
-              </span>
-            </div>
+          <Link href="/admin/dashboard" className="flex items-center space-x-2 w-full">
             <div className="flex flex-col">
-              <span className="font-bold text-lg">{APP_CONFIG.name}</span>
+              <span className="hidden sm:inline font-bold text-xl">
+                🛒 {APP_CONFIG.name}
+              </span>
               <span className="text-xs text-muted-foreground">Admin Panel</span>
             </div>
           </Link>
