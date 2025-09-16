@@ -29,7 +29,8 @@ export const LoginForm = ({
   const searchParams = useSearchParams();
 
   const redirectTo =
-    searchParams?.get("redirect") || (type === "admin" ? "/admin/dashboard" : "/");
+    searchParams?.get("redirect") ||
+    (type === "admin" ? "/admin/dashboard" : "/");
 
   const {
     register,
@@ -206,47 +207,45 @@ export const LoginForm = ({
       </form>
 
       {/* Development Quick Login Buttons */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="mt-6 p-4 bg-muted rounded-lg">
-          <p className="text-sm font-medium mb-3 text-center">
-            Quick Login (Development)
-          </p>
-          <div className="space-y-2">
-            {type === "admin" ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => quickLogin("admin@techmart.com", "admin123")}
-                  disabled={loading}
-                  className="w-full"
-                >
-                  Login as Admin
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => quickLogin("sarah@techmart.com", "user123")}
-                  disabled={loading}
-                  className="w-full"
-                >
-                  Login as User
-                </Button>
-              </>
-            ) : (
+      <div className="mt-6 p-4 bg-muted rounded-lg">
+        <p className="text-sm font-medium mb-3 text-center">
+          Quick Login (Development)
+        </p>
+        <div className="space-y-2">
+          {type === "admin" ? (
+            <>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => quickLogin("alice@example.com", "customer123")}
+                onClick={() => quickLogin("admin@techmart.com", "admin123")}
                 disabled={loading}
                 className="w-full"
               >
-                Login as Customer
+                Login as Admin
               </Button>
-            )}
-          </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => quickLogin("sarah@techmart.com", "user123")}
+                disabled={loading}
+                className="w-full"
+              >
+                Login as User
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => quickLogin("alice@example.com", "customer123")}
+              disabled={loading}
+              className="w-full"
+            >
+              Login as Customer
+            </Button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Additional Links */}
       <div className="mt-6 text-center text-sm">
