@@ -86,7 +86,7 @@ function CreateUserPageContent() {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <p className="text-muted-foreground mb-6">
-            You don't have permission to add users. Only administrators can
+            You don&apos;t have permission to add users. Only administrators can
             create new user accounts.
           </p>
           <button

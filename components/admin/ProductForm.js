@@ -515,7 +515,7 @@ export const ProductForm = ({
                 </label>
               </div>
               <p className="text-xs text-muted-foreground">
-                Inactive products won't be visible to customers
+                Inactive products won&apos;t be visible to customers
               </p>
             </div>
           </div>

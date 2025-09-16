@@ -119,7 +119,7 @@ function ProductsPageContent() {
         <div>
           <h1 className="text-3xl font-bold">Product Management</h1>
           <p className="text-muted-foreground">
-            Manage your store's product inventory and information
+            Manage your store&apos;s product inventory and information
           </p>
         </div>
 

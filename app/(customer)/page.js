@@ -195,7 +195,7 @@ export default function CustomerHomepage() {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Shop by Category</h2>
           <p className="text-muted-foreground">
-            Find exactly what you're looking for
+            Find exactly what you&apos;re looking for
           </p>
         </div>
 

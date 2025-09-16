@@ -13,7 +13,7 @@ export default function UserNotFound() {
           </div>
           <h1 className="text-2xl font-bold mb-2">User Not Found</h1>
           <p className="text-muted-foreground">
-            The user you're looking for doesn't exist or has been removed from
+            The user you&apos;re looking for doesn&apos;t exist or has been removed from
             the system.
           </p>
         </div>

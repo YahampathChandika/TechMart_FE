@@ -268,7 +268,7 @@ function CustomerProfileContent() {
             <div className="space-y-4 border-t pt-6">
               <h3 className="font-medium text-lg">Change Password</h3>
               <p className="text-sm text-muted-foreground">
-                Leave password fields empty if you don't want to change your
+                Leave password fields empty if you don&apos;t want to change your
                 password.
               </p>
 

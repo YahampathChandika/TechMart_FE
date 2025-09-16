@@ -303,7 +303,7 @@ export const SearchFilters = ({
             <div className="flex flex-wrap gap-2">
               {filters.search && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
-                  Search: "{filters.search}"
+                  Search: &quot;{filters.search}&quot;
                   <button
                     onClick={() => updateFilter("search", "")}
                     className="hover:bg-primary/20 rounded-full p-0.5"

@@ -57,7 +57,7 @@ function CartPageContent() {
             </div>
             <h1 className="text-2xl font-bold mb-2">Your cart is empty</h1>
             <p className="text-muted-foreground">
-              Looks like you haven't added any items to your cart yet.
+              Looks like you haven&apos;t added any items to your cart yet.
             </p>
           </div>
 
@@ -193,7 +193,7 @@ function CartPageContent() {
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-2">You might also like</h2>
             <p className="text-muted-foreground">
-              Based on what's in your cart
+              Based on what&apos;s in your cart
             </p>
           </div>
           <SimpleProductGrid products={recommendedProducts} />

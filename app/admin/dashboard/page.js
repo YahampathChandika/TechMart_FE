@@ -89,7 +89,7 @@ function DashboardContent() {
             Welcome back, {user?.first_name}! 👋
           </h1>
           <p className="text-muted-foreground mt-1">
-            Here's what's happening with your store today.
+            Here&apos;s what&apos;s happening with your store today.
           </p>
         </div>
 
@@ -164,13 +164,13 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Quick Stats & Today's Summary */}
+        {/* Quick Stats & Today&apos;s Summary */}
         <div className="space-y-6">
-          {/* Today's Summary */}
+          {/* Today&apos;s Summary */}
           <div className="bg-background border rounded-lg p-6">
             <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
               <Calendar className="h-5 w-5" />
-              Today's Summary
+              Today&apos;s Summary
             </h3>
 
             <div className="space-y-4">
