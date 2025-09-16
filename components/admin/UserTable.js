@@ -431,7 +431,7 @@ export const UserTable = ({
                     <td className="p-3">
                       <div className="flex items-center space-x-1">
                         {canEditUser(user) && (
-                          <Link href={`/users/${user.id}/edit`}>
+                          <Link href={`/admin/users/${user.id}/edit`}>
                             <Button variant="ghost" size="sm" className="p-2">
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -439,7 +439,7 @@ export const UserTable = ({
                         )}
 
                         {canManagePrivileges(user) && (
-                          <Link href={`/users/${user.id}/privileges`}>
+                          <Link href={`/admin/users/${user.id}/privileges`}>
                             <Button
                               variant="ghost"
                               size="sm"

@@ -4,9 +4,5 @@
 import { AdminGuard } from "@/components/auth/AuthGuard";
 
 export default function AdminLayout({ children }) {
-  return (
-    <AdminGuard requireAdmin={true}>
-      <div className="min-h-screen bg-background">{children}</div>
-    </AdminGuard>
-  );
+  return <AdminGuard requireAdmin={true}>{children}</AdminGuard>;
 }
