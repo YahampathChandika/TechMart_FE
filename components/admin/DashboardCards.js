@@ -37,10 +37,10 @@ export const DashboardCards = ({ stats, className = "" }) => {
       description: "Registered customers",
       icon: Users,
       color: "green",
-      href: "/customers",
+      href: "/admin/customers",
       action: {
         label: "View All",
-        href: "/customers",
+        href: "/admin/customers",
         icon: Eye,
       },
     },
@@ -259,7 +259,7 @@ export const DashboardCards = ({ stats, className = "" }) => {
             </Button>
           </Link>
 
-          <Link href="/customers">
+          <Link href="/admin/customers">
             <Button
               variant="outline"
               className="w-full h-20 flex flex-col items-center gap-2 hover:bg-background"

@@ -408,14 +408,14 @@ export const ProductTable = ({
                       </td>
                       <td className="p-3">
                         <div className="flex items-center space-x-1">
-                          <Link href={`/products/${product.id}`}>
+                          <Link href={`/admin/products/${product.id}`}>
                             <Button variant="ghost" size="sm" className="p-2">
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
 
                           {canUpdate && (
-                            <Link href={`/products/${product.id}/edit`}>
+                            <Link href={`/admin/products/${product.id}/edit`}>
                               <Button variant="ghost" size="sm" className="p-2">
                                 <Edit className="h-4 w-4" />
                               </Button>

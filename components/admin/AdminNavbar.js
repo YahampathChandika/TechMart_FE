@@ -39,7 +39,7 @@ export const AdminNavbar = ({
     e.preventDefault();
     if (searchQuery.trim()) {
       // Navigate to products page with search query
-      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/admin/products?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 

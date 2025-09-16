@@ -252,7 +252,7 @@ function DashboardContent() {
                 </Button>
               </Link>
 
-              <Link href="/customers">
+              <Link href="/admin/customers">
                 <Button
                   variant="ghost"
                   size="sm"
