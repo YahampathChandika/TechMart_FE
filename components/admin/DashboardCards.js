@@ -24,10 +24,10 @@ export const DashboardCards = ({ stats, className = "" }) => {
       description: "Active products in store",
       icon: Package,
       color: "blue",
-      href: "/products",
+      href: "/admin/products",
       action: {
         label: "Add Product",
-        href: "/products/create",
+        href: "/admin/products/create",
         icon: Plus,
       },
     },
@@ -50,10 +50,10 @@ export const DashboardCards = ({ stats, className = "" }) => {
       description: "Admin & staff users",
       icon: ShoppingCart,
       color: "purple",
-      href: "/users",
+      href: "/admin/users",
       action: {
         label: "Add User",
-        href: "/users/create",
+        href: "/admin/users/create",
         icon: Plus,
       },
     },
@@ -63,10 +63,10 @@ export const DashboardCards = ({ stats, className = "" }) => {
       description: "Total value of products",
       icon: DollarSign,
       color: "orange",
-      href: "/products",
+      href: "/admin/products",
       action: {
         label: "View Products",
-        href: "/products",
+        href: "/admin/products",
         icon: Package,
       },
     },
@@ -79,7 +79,7 @@ export const DashboardCards = ({ stats, className = "" }) => {
       description: "Products with < 20 items",
       icon: AlertTriangle,
       color: "yellow",
-      href: "/products?filter=low-stock",
+      href: "/admin/products?filter=low-stock",
       urgent: (stats?.lowStockProducts || 0) > 0,
     },
     {
@@ -88,7 +88,7 @@ export const DashboardCards = ({ stats, className = "" }) => {
       description: "Products completely sold out",
       icon: AlertTriangle,
       color: "red",
-      href: "/products?filter=out-of-stock",
+      href: "/admin/products?filter=out-of-stock",
       urgent: (stats?.outOfStockProducts || 0) > 0,
     },
   ];
@@ -229,7 +229,7 @@ export const DashboardCards = ({ stats, className = "" }) => {
       <div className="bg-muted/50 rounded-lg p-6">
         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link href="/products/create">
+          <Link href="/admin/products/create">
             <Button
               variant="outline"
               className="w-full h-20 flex flex-col items-center gap-2 hover:bg-background"
@@ -239,7 +239,7 @@ export const DashboardCards = ({ stats, className = "" }) => {
             </Button>
           </Link>
 
-          <Link href="/users/create">
+          <Link href="/admin/users/create">
             <Button
               variant="outline"
               className="w-full h-20 flex flex-col items-center gap-2 hover:bg-background"
@@ -249,7 +249,7 @@ export const DashboardCards = ({ stats, className = "" }) => {
             </Button>
           </Link>
 
-          <Link href="/products">
+          <Link href="/admin/products">
             <Button
               variant="outline"
               className="w-full h-20 flex flex-col items-center gap-2 hover:bg-background"

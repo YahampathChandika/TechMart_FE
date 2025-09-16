@@ -94,7 +94,7 @@ export const AuthGuard = ({
   }
 
   // Check if admin/user is trying to access customer-only pages
-  if (isCustomer() && (requireAdmin || pathname.startsWith("/dashboard"))) {
+  if (isCustomer() && (requireAdmin || pathname.startsWith("/admin/dashboard"))) {
     if (fallback) {
       return fallback;
     }

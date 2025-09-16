@@ -94,14 +94,14 @@ function DashboardContent() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Link href="/products/create">
+          <Link href="/admin/products/create">
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Add Product
             </Button>
           </Link>
           {isAdmin() && (
-            <Link href="/users/create">
+            <Link href="/admin/users/create">
               <Button variant="outline" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Add User
@@ -241,7 +241,7 @@ function DashboardContent() {
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
 
             <div className="space-y-2">
-              <Link href="/products">
+              <Link href="/admin/products">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -264,7 +264,7 @@ function DashboardContent() {
               </Link>
 
               {isAdmin() && (
-                <Link href="/users">
+                <Link href="/admin/users">
                   <Button
                     variant="ghost"
                     size="sm"

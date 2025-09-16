@@ -19,14 +19,14 @@ export default function UserNotFound() {
         </div>
 
         <div className="space-y-3">
-          <Link href="/users">
+          <Link href="/admin/users">
             <Button className="w-full flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Back to Users
             </Button>
           </Link>
 
-          <Link href="/users/create">
+          <Link href="/admin/users/create">
             <Button
               variant="outline"
               className="w-full flex items-center gap-2"
@@ -36,7 +36,7 @@ export default function UserNotFound() {
             </Button>
           </Link>
 
-          <Link href="/dashboard">
+          <Link href="/admin/dashboard">
             <Button variant="ghost" className="w-full flex items-center gap-2">
               Dashboard
             </Button>

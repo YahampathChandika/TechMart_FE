@@ -1,15 +1,11 @@
-// app/(admin)/layout.js
+// app/admin/layout.js
 "use client";
 
 import { AdminGuard } from "@/components/auth/AuthGuard";
 
-export default function AdminRootLayout({ children }) {
+export default function AdminLayout({ children }) {
   return (
-    <AdminGuard>
-      {/* 
-        Admin pages will use their own layout system with AdminLayout component
-        This root layout just provides the auth guard wrapper
-      */}
+    <AdminGuard requireAdmin={true}>
       <div className="min-h-screen bg-background">{children}</div>
     </AdminGuard>
   );

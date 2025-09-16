@@ -126,7 +126,7 @@ function UserPrivilegesPageContent({ userId }) {
   };
 
   const handleCancel = () => {
-    router.push("/users");
+    router.push("/admin/users");
   };
 
   if (!hasPermission) {
@@ -138,7 +138,7 @@ function UserPrivilegesPageContent({ userId }) {
         />
         <div className="mt-4 text-center">
           <button
-            onClick={() => router.push("/users")}
+            onClick={() => router.push("/admin/users")}
             className="text-primary hover:underline"
           >
             Back to Users
@@ -166,7 +166,7 @@ function UserPrivilegesPageContent({ userId }) {
         />
         <div className="mt-4 text-center">
           <button
-            onClick={() => router.push("/users")}
+            onClick={() => router.push("/admin/users")}
             className="text-primary hover:underline"
           >
             Back to Users

@@ -158,7 +158,7 @@ function UsersPageContent() {
           </div>
 
           {/* Add User Button */}
-          <Link href="/users/create">
+          <Link href="/admin/users/create">
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Add User

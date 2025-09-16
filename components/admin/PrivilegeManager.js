@@ -78,7 +78,7 @@ export const PrivilegeManager = ({
 
         // Redirect after success
         setTimeout(() => {
-          router.push("/users");
+          router.push("/admin/users");
         }, 1500);
       }
     } catch (err) {

@@ -77,7 +77,7 @@ function CreateUserPageContent() {
   };
 
   const handleCancel = () => {
-    router.push("/users");
+    router.push("/admin/users");
   };
 
   if (!hasPermission) {
@@ -90,7 +90,7 @@ function CreateUserPageContent() {
             create new user accounts.
           </p>
           <button
-            onClick={() => router.push("/users")}
+            onClick={() => router.push("/admin/users")}
             className="text-primary hover:underline"
           >
             Back to Users

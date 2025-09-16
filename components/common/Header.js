@@ -61,7 +61,7 @@ export const Header = ({ className = "" }) => {
   };
 
   const navigateToDashboard = () => {
-    router.push("/dashboard");
+    router.push("/admin/dashboard");
     setUserMenuOpen(false);
   };
 
@@ -97,7 +97,7 @@ export const Header = ({ className = "" }) => {
   const AdminNavigation = () => (
     <>
       <Link
-        href="/dashboard"
+        href="/admin/dashboard"
         className="text-foreground hover:text-primary transition-colors"
         onClick={() => setMobileMenuOpen(false)}
       >
@@ -105,7 +105,7 @@ export const Header = ({ className = "" }) => {
         <span className="hidden md:inline">Dashboard</span>
       </Link>
       <Link
-        href="/products"
+        href="/admin/products"
         className="text-foreground hover:text-primary transition-colors"
         onClick={() => setMobileMenuOpen(false)}
       >
@@ -113,7 +113,7 @@ export const Header = ({ className = "" }) => {
         <span className="hidden md:inline">Products</span>
       </Link>
       <Link
-        href="/customers"
+        href="/admin/customers"
         className="text-foreground hover:text-primary transition-colors"
         onClick={() => setMobileMenuOpen(false)}
       >
@@ -122,7 +122,7 @@ export const Header = ({ className = "" }) => {
       </Link>
       {isAdmin() && (
         <Link
-          href="/users"
+          href="/admin/users"
           className="text-foreground hover:text-primary transition-colors"
           onClick={() => setMobileMenuOpen(false)}
         >

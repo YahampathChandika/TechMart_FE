@@ -32,7 +32,7 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
       items: [
         {
           name: "Dashboard",
-          href: "/dashboard",
+          href: "/admin/dashboard",
           icon: BarChart3,
           description: "Analytics & overview",
         },
@@ -43,13 +43,13 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
       items: [
         {
           name: "Products",
-          href: "/products",
+          href: "/admin/products",
           icon: Package,
           description: "Manage products",
         },
         {
           name: "Customers",
-          href: "/customers",
+          href: "/admin/customers",
           icon: Users,
           description: "Manage customers",
         },
@@ -57,7 +57,7 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
           ? [
               {
                 name: "Users",
-                href: "/users",
+                href: "/admin/users",
                 icon: Settings,
                 description: "Manage admin users",
               },
@@ -70,7 +70,7 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
       items: [
         {
           name: "Add Product",
-          href: "/products/create",
+          href: "/admin/products/create",
           icon: Package,
           variant: "create",
           description: "Create new product",
@@ -79,7 +79,7 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
           ? [
               {
                 name: "Add User",
-                href: "/users/create",
+                href: "/admin/users/create",
                 icon: User,
                 variant: "create",
                 description: "Create new user",
@@ -91,8 +91,8 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
   ];
 
   const isActive = (href) => {
-    if (href === "/dashboard") {
-      return pathname === "/dashboard";
+    if (href === "/admin/dashboard") {
+      return pathname === "/admin/dashboard";
     }
     return pathname.startsWith(href);
   };
@@ -107,7 +107,7 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         {!isCollapsed && (
-          <Link href="/dashboard" className="flex items-center space-x-2">
+          <Link href="/admin/dashboard" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">
                 T

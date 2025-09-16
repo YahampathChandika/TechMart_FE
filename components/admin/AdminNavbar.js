@@ -175,7 +175,7 @@ export const AdminNavbar = ({
                         </button>
                       </Link>
 
-                      <Link href="/dashboard">
+                      <Link href="/admin/dashboard">
                         <button
                           onClick={() => setUserMenuOpen(false)}
                           className="w-full text-left px-4 py-2 text-sm hover:bg-muted flex items-center gap-2"

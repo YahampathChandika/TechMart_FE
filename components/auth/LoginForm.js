@@ -29,7 +29,7 @@ export const LoginForm = ({
   const searchParams = useSearchParams();
 
   const redirectTo =
-    searchParams?.get("redirect") || (type === "admin" ? "/dashboard" : "/");
+    searchParams?.get("redirect") || (type === "admin" ? "/admin/dashboard" : "/");
 
   const {
     register,

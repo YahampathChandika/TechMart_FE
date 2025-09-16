@@ -94,7 +94,7 @@ function EditProductPageContent({ productId }) {
   };
 
   const handleCancel = () => {
-    router.push("/products");
+    router.push("/admin/products");
   };
 
   if (!canUpdate) {
@@ -106,7 +106,7 @@ function EditProductPageContent({ productId }) {
         />
         <div className="mt-4 text-center">
           <button
-            onClick={() => router.push("/products")}
+            onClick={() => router.push("/admin/products")}
             className="text-primary hover:underline"
           >
             Back to Products
@@ -134,7 +134,7 @@ function EditProductPageContent({ productId }) {
         />
         <div className="mt-4 text-center">
           <button
-            onClick={() => router.push("/products")}
+            onClick={() => router.push("/admin/products")}
             className="text-primary hover:underline"
           >
             Back to Products

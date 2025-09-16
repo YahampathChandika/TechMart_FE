@@ -248,7 +248,7 @@ export const ProductTable = ({
           )}
 
           {canAdd && (
-            <Link href="/products/create">
+            <Link href="/admin/products/create">
               <Button className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Add Product
@@ -335,7 +335,7 @@ export const ProductTable = ({
                         </p>
                       </div>
                       {canAdd && (
-                        <Link href="/products/create">
+                        <Link href="/admin/products/create">
                           <Button size="sm">Add Product</Button>
                         </Link>
                       )}

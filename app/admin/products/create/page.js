@@ -55,7 +55,7 @@ function CreateProductPageContent() {
   };
 
   const handleCancel = () => {
-    router.push("/products");
+    router.push("/admin/products");
   };
 
   if (!canAdd) {
@@ -68,7 +68,7 @@ function CreateProductPageContent() {
             administrator to request access.
           </p>
           <button
-            onClick={() => router.push("/products")}
+            onClick={() => router.push("/admin/products")}
             className="text-primary hover:underline"
           >
             Back to Products

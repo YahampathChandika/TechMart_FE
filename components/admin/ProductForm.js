@@ -98,7 +98,7 @@ export const ProductForm = ({
 
         // Redirect after success
         setTimeout(() => {
-          router.push("/products");
+          router.push("/admin/products");
         }, 1500);
       }
     } catch (err) {

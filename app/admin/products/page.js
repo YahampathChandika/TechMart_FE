@@ -146,7 +146,7 @@ function ProductsPageContent() {
 
           {/* Add Product Button */}
           {canAdd && (
-            <Link href="/products/create">
+            <Link href="/admin/products/create">
               <Button className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Add Product

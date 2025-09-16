@@ -88,7 +88,7 @@ export const UserForm = ({
 
         // Redirect after success
         setTimeout(() => {
-          router.push("/users");
+          router.push("/admin/users");
         }, 1500);
       }
     } catch (err) {
