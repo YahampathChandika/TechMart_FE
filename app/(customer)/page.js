@@ -81,26 +81,6 @@ export default function CustomerHomepage() {
         </div>
       </section>
 
-      {/* Welcome Message for Logged In Customers */}
-      {isCustomer() && customer && (
-        <section className="bg-muted/50 rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-2">
-            Welcome back, {customer.first_name}! 👋
-          </h2>
-          <p className="text-muted-foreground mb-4">
-            Ready to discover some amazing new tech products?
-          </p>
-          <div className="flex gap-4">
-            <Link href="/cart">
-              <Button variant="outline">View Cart</Button>
-            </Link>
-            <Link href="/profile">
-              <Button variant="outline">My Profile</Button>
-            </Link>
-          </div>
-        </section>
-      )}
-
       {/* Benefits Section */}
       <section className="container mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

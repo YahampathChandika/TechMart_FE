@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Admin/User login
+  // FIXED: Admin/User login - properly handle and pass through errors
   const loginUser = async (email, password) => {
     try {
       const result = await authAPI.loginUser(email, password);
@@ -103,21 +103,25 @@ export const AuthProvider = ({ children }) => {
           message: "Login successful",
         };
       } else {
+        // FIXED: Return the full error structure for proper handling
         return {
           success: false,
-          message: result.error || "Login failed",
+          error: result.error || "Login failed",
+          errors: result.errors || null, // Pass through validation errors
+          message: result.message || "Login failed",
         };
       }
     } catch (error) {
       console.error("User login error:", error);
       return {
         success: false,
+        error: "An unexpected error occurred",
         message: "An unexpected error occurred",
       };
     }
   };
 
-  // Customer login
+  // FIXED: Customer login - properly handle and pass through errors
   const loginCustomer = async (email, password) => {
     try {
       const result = await authAPI.loginCustomer(email, password);
@@ -141,21 +145,25 @@ export const AuthProvider = ({ children }) => {
           message: "Login successful",
         };
       } else {
+        // FIXED: Return the full error structure for proper handling
         return {
           success: false,
-          message: result.error || "Login failed",
+          error: result.error || "Login failed",
+          errors: result.errors || null, // Pass through validation errors
+          message: result.message || "Login failed",
         };
       }
     } catch (error) {
       console.error("Customer login error:", error);
       return {
         success: false,
+        error: "An unexpected error occurred",
         message: "An unexpected error occurred",
       };
     }
   };
 
-  // Register customer
+  // FIXED: Register customer - properly handle and pass through errors
   const registerCustomer = async (customerData) => {
     try {
       const result = await authAPI.registerCustomer(customerData);
@@ -179,21 +187,25 @@ export const AuthProvider = ({ children }) => {
           message: "Registration successful",
         };
       } else {
+        // FIXED: Return the full error structure for proper handling
         return {
           success: false,
-          message: result.error || "Registration failed",
+          error: result.error || "Registration failed",
+          errors: result.errors || null, // Pass through validation errors
+          message: result.message || "Registration failed",
         };
       }
     } catch (error) {
       console.error("Customer registration error:", error);
       return {
         success: false,
+        error: "An unexpected error occurred",
         message: "An unexpected error occurred",
       };
     }
   };
 
-  // Register user (admin only)
+  // FIXED: Register user (admin only) - properly handle and pass through errors
   const registerUser = async (userData) => {
     try {
       const result = await authAPI.registerUser(userData);
@@ -205,15 +217,19 @@ export const AuthProvider = ({ children }) => {
           message: "User registered successfully",
         };
       } else {
+        // FIXED: Return the full error structure for proper handling
         return {
           success: false,
-          message: result.error || "User registration failed",
+          error: result.error || "User registration failed",
+          errors: result.errors || null, // Pass through validation errors
+          message: result.message || "User registration failed",
         };
       }
     } catch (error) {
       console.error("User registration error:", error);
       return {
         success: false,
+        error: "An unexpected error occurred",
         message: "An unexpected error occurred",
       };
     }
@@ -269,7 +285,7 @@ export const AuthProvider = ({ children }) => {
     return null;
   };
 
-  // Update user profile
+  // FIXED: Update user profile - properly handle and pass through errors
   const updateUserProfile = async (updatedData) => {
     if (!user) return { success: false, message: "No user logged in" };
 
@@ -287,21 +303,25 @@ export const AuthProvider = ({ children }) => {
           message: "Profile updated successfully",
         };
       } else {
+        // FIXED: Return the full error structure for proper handling
         return {
           success: false,
-          message: result.error || "Failed to update profile",
+          error: result.error || "Failed to update profile",
+          errors: result.errors || null, // Pass through validation errors
+          message: result.message || "Failed to update profile",
         };
       }
     } catch (error) {
       console.error("Update user profile error:", error);
       return {
         success: false,
+        error: "An unexpected error occurred",
         message: "An unexpected error occurred",
       };
     }
   };
 
-  // Update customer profile
+  // FIXED: Update customer profile - properly handle and pass through errors
   const updateCustomerProfile = async (updatedData) => {
     if (!customer) return { success: false, message: "No customer logged in" };
 
@@ -322,15 +342,19 @@ export const AuthProvider = ({ children }) => {
           message: "Profile updated successfully",
         };
       } else {
+        // FIXED: Return the full error structure for proper handling
         return {
           success: false,
-          message: result.error || "Failed to update profile",
+          error: result.error || "Failed to update profile",
+          errors: result.errors || null, // Pass through validation errors
+          message: result.message || "Failed to update profile",
         };
       }
     } catch (error) {
       console.error("Update customer profile error:", error);
       return {
         success: false,
+        error: "An unexpected error occurred",
         message: "An unexpected error occurred",
       };
     }

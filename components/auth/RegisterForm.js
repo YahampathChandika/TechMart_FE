@@ -13,7 +13,10 @@ import {
 } from "@/components/common";
 import { useAuth } from "@/hooks";
 import { VALIDATION_RULES } from "@/lib/constants";
-import { handleValidationErrors } from "@/lib/formErrorUtils";
+import {
+  handleValidationErrors,
+  getValidationErrorSummary,
+} from "@/lib/formErrorUtils";
 import { cn } from "@/lib/utils";
 
 export const RegisterForm = ({ className = "", onSuccess = null }) => {
@@ -60,6 +63,8 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
         password: data.password,
       });
 
+      console.log("Registration result:", result); // Debug log
+
       if (result.success) {
         setSuccess(true);
 
@@ -72,8 +77,21 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
           }, 2000);
         }
       } else {
-        // Use utility function to handle validation errors
-        handleValidationErrors(result, setFieldError, setError);
+        // ENHANCED: Use utility function to handle validation errors
+        const errorsHandled = handleValidationErrors(
+          result,
+          setFieldError,
+          setError
+        );
+
+        if (!errorsHandled) {
+          // Fallback error handling
+          setError(
+            result.error ||
+              result.message ||
+              "Registration failed. Please try again."
+          );
+        }
       }
     } catch (err) {
       console.error("Registration error:", err);
@@ -95,7 +113,7 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
             Your account has been created and you're now logged in.
           </p>
           <p className="text-sm text-green-600 dark:text-green-400">
-            Redirecting to home page...
+            Redirecting to homepage...
           </p>
         </div>
       </div>
@@ -105,136 +123,129 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
   return (
     <div className={cn("w-full max-w-md mx-auto", className)}>
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold">Create Your Account</h1>
+        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <UserPlus className="w-8 h-8 text-primary" />
+        </div>
+        <h1 className="text-2xl font-bold">Create Account</h1>
         <p className="text-muted-foreground mt-2">
-          Join TechMart and start shopping for the latest tech products
+          Join us today and start shopping
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {error && <ErrorMessage message={error} />}
+      {/* ENHANCED: Show appropriate error messages */}
+      {error && Object.keys(errors).length === 0 && (
+        <div className="mb-4">
+          <ErrorMessage message={error} />
+        </div>
+      )}
 
-        {/* Name Fields */}
+      {/* Show helpful message when there are field errors */}
+      {Object.keys(errors).length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+          <p className="text-sm text-red-700 dark:text-red-300">
+            {getValidationErrorSummary(errors)}
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Name Fields Row */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label
               htmlFor="first_name"
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium text-foreground mb-2"
             >
               First Name
             </label>
             <input
-              {...register("first_name", {
-                required: "First name is required",
-                minLength: {
-                  value: 2,
-                  message: "First name must be at least 2 characters",
-                },
-                maxLength: {
-                  value: 50,
-                  message: "First name must not exceed 50 characters",
-                },
-              })}
+              {...register("first_name", VALIDATION_RULES.required)}
               type="text"
               id="first_name"
               className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="John"
+              autoComplete="given-name"
             />
-            <FormFieldError error={errors.first_name} />
+            <FormFieldError message={errors.first_name?.message} />
           </div>
 
           <div>
             <label
               htmlFor="last_name"
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium text-foreground mb-2"
             >
               Last Name
             </label>
             <input
-              {...register("last_name", {
-                required: "Last name is required",
-                minLength: {
-                  value: 2,
-                  message: "Last name must be at least 2 characters",
-                },
-                maxLength: {
-                  value: 50,
-                  message: "Last name must not exceed 50 characters",
-                },
-              })}
+              {...register("last_name", VALIDATION_RULES.required)}
               type="text"
               id="last_name"
               className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Doe"
+              autoComplete="family-name"
             />
-            <FormFieldError error={errors.last_name} />
+            <FormFieldError message={errors.last_name?.message} />
           </div>
         </div>
 
         {/* Email Field */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Email Address
           </label>
           <input
-            {...register("email", {
-              required: "Email is required",
-              pattern: {
-                value: VALIDATION_RULES.EMAIL,
-                message: "Please enter a valid email address",
-              },
-            })}
+            {...register("email", VALIDATION_RULES.email)}
             type="email"
             id="email"
-            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring ${
+              errors.email
+                ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                : "border-input"
+            }`}
             placeholder="john@example.com"
+            autoComplete="email"
           />
-          <FormFieldError error={errors.email} />
+          <FormFieldError message={errors.email?.message} />
         </div>
 
         {/* Contact Field */}
         <div>
-          <label htmlFor="contact" className="block text-sm font-medium mb-2">
+          <label
+            htmlFor="contact"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Contact Number
           </label>
           <input
-            {...register("contact", {
-              required: "Contact number is required",
-              minLength: {
-                value: 10,
-                message: "Contact number must be at least 10 digits",
-              },
-              maxLength: {
-                value: 15,
-                message: "Contact number must not exceed 15 digits",
-              },
-            })}
+            {...register("contact", VALIDATION_RULES.phone)}
             type="tel"
             id="contact"
             className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="+1234567890"
+            autoComplete="tel"
           />
-          <FormFieldError error={errors.contact} />
+          <FormFieldError message={errors.contact?.message} />
         </div>
 
         {/* Password Field */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-2">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Password
           </label>
           <div className="relative">
             <input
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Password must be at least 6 characters",
-                },
-              })}
+              {...register("password", VALIDATION_RULES.password)}
               type={showPassword ? "text" : "password"}
               id="password"
               className="w-full px-3 py-2 pr-10 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="••••••••"
+              autoComplete="new-password"
             />
             <button
               type="button"
@@ -248,14 +259,14 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
               )}
             </button>
           </div>
-          <FormFieldError error={errors.password} />
+          <FormFieldError message={errors.password?.message} />
         </div>
 
         {/* Confirm Password Field */}
         <div>
           <label
             htmlFor="confirm_password"
-            className="block text-sm font-medium mb-2"
+            className="block text-sm font-medium text-foreground mb-2"
           >
             Confirm Password
           </label>
@@ -270,6 +281,7 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
               id="confirm_password"
               className="w-full px-3 py-2 pr-10 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="••••••••"
+              autoComplete="new-password"
             />
             <button
               type="button"
@@ -283,7 +295,7 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
               )}
             </button>
           </div>
-          <FormFieldError error={errors.confirm_password} />
+          <FormFieldError message={errors.confirm_password?.message} />
         </div>
 
         {/* Submit Button */}
@@ -315,6 +327,33 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
           </Button>
         </p>
       </div>
+
+      {/* DEBUG: Development error info */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="mt-4 text-xs text-muted-foreground">
+          <details>
+            <summary>Debug Info (Dev Only)</summary>
+            <div className="mt-2 p-2 bg-muted rounded text-xs space-y-1">
+              <div>
+                <strong>Form Errors:</strong>
+              </div>
+              {Object.entries(errors).map(([field, error]) => (
+                <div key={field}>
+                  • {field}: {error?.message || "No message"}
+                </div>
+              ))}
+              {Object.keys(errors).length === 0 && (
+                <div className="text-muted-foreground">No form errors</div>
+              )}
+              {error && (
+                <div className="mt-2">
+                  <strong>General Error:</strong> {error}
+                </div>
+              )}
+            </div>
+          </details>
+        </div>
+      )}
     </div>
   );
 };

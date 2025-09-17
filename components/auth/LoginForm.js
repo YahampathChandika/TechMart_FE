@@ -13,7 +13,10 @@ import {
   InlineLoadingSpinner,
 } from "@/components/common";
 import { VALIDATION_RULES } from "@/lib/constants";
-import { handleValidationErrors } from "@/lib/formErrorUtils";
+import {
+  handleValidationErrors,
+  getValidationErrorSummary,
+} from "@/lib/formErrorUtils";
 import { cn } from "@/lib/utils";
 
 export const LoginForm = ({
@@ -60,6 +63,8 @@ export const LoginForm = ({
         result = await loginCustomer(data.email, data.password);
       }
 
+      console.log("Login result:", result); // Debug log
+
       if (result.success) {
         if (onSuccess) {
           onSuccess(result);
@@ -67,8 +72,19 @@ export const LoginForm = ({
           router.push(redirectTo);
         }
       } else {
-        // Use utility function to handle validation errors
-        handleValidationErrors(result, setFieldError, setError);
+        // ENHANCED: Use utility function to handle validation errors
+        const errorsHandled = handleValidationErrors(
+          result,
+          setFieldError,
+          setError
+        );
+
+        if (!errorsHandled) {
+          // Fallback error handling
+          setError(
+            result.error || result.message || "Login failed. Please try again."
+          );
+        }
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -93,54 +109,62 @@ export const LoginForm = ({
         </h1>
         <p className="text-muted-foreground mt-2">
           {type === "admin"
-            ? "Sign in to access the admin dashboard"
-            : "Sign in to your TechMart account"}
+            ? "Sign in to access admin dashboard"
+            : "Sign in to your account to continue"}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {error && <ErrorMessage message={error} />}
+      {/* ENHANCED: Show appropriate error messages */}
+      {error && Object.keys(errors).length === 0 && (
+        <div className="mb-4">
+          <ErrorMessage message={error} />
+        </div>
+      )}
 
+      {/* Show helpful message when there are field errors */}
+      {Object.keys(errors).length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+          <p className="text-sm text-red-700 dark:text-red-300">
+            {getValidationErrorSummary(errors)}
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Email Field */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Email Address
           </label>
           <input
-            {...register("email", {
-              required: "Email is required",
-              pattern: {
-                value: VALIDATION_RULES.EMAIL,
-                message: "Please enter a valid email address",
-              },
-            })}
+            {...register("email", VALIDATION_RULES.email)}
             type="email"
             id="email"
             className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Enter your email"
             autoComplete="email"
           />
-          <FormFieldError error={errors.email} />
+          <FormFieldError message={errors.email?.message} />
         </div>
 
         {/* Password Field */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-2">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Password
           </label>
           <div className="relative">
             <input
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Password must be at least 6 characters",
-                },
-              })}
+              {...register("password", VALIDATION_RULES.password)}
               type={showPassword ? "text" : "password"}
               id="password"
               className="w-full px-3 py-2 pr-10 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Enter your password"
+              placeholder="••••••••"
               autoComplete="current-password"
             />
             <button
@@ -155,7 +179,7 @@ export const LoginForm = ({
               )}
             </button>
           </div>
-          <FormFieldError error={errors.password} />
+          <FormFieldError message={errors.password?.message} />
         </div>
 
         {/* Submit Button */}
@@ -167,16 +191,20 @@ export const LoginForm = ({
             </>
           ) : (
             <>
-              <LogIn className="w-4 h-4 mr-2" />
+              {type === "admin" ? (
+                <UserCheck className="w-4 h-4 mr-2" />
+              ) : (
+                <LogIn className="w-4 h-4 mr-2" />
+              )}
               Sign In
             </>
           )}
         </Button>
       </form>
 
-      {/* Additional Links */}
+      {/* Registration Link (only for customer) */}
       {type === "customer" && (
-        <div className="mt-6 text-center space-y-3">
+        <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             Don't have an account?{" "}
             <Button
@@ -184,56 +212,36 @@ export const LoginForm = ({
               className="p-0 h-auto font-medium"
               onClick={() => router.push("/register")}
             >
-              Sign up here
-            </Button>
-          </p>
-
-          <div className="border-t pt-3">
-            <p className="text-xs text-muted-foreground">
-              Are you an admin or staff member?{" "}
-              <Button
-                variant="link"
-                className="p-0 h-auto text-xs font-medium"
-                onClick={() => router.push("/admin-login")}
-              >
-                Admin Login
-              </Button>
-            </p>
-          </div>
-        </div>
-      )}
-
-      {type === "admin" && (
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Customer login?{" "}
-            <Button
-              variant="link"
-              className="p-0 h-auto font-medium"
-              onClick={() => router.push("/login")}
-            >
-              Sign in here
+              Create one here
             </Button>
           </p>
         </div>
       )}
 
-      {/* Development Quick Login - Remove in production */}
+      {/* DEBUG: Development error info */}
       {process.env.NODE_ENV === "development" && (
-        <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-2 font-medium">
-            Development Mode - Quick Test Accounts:
-          </p>
-          <div className="space-y-1 text-xs text-yellow-700 dark:text-yellow-300">
-            {type === "admin" ? (
-              <>
-                <p>Admin: admin@example.com / password123</p>
-                <p>User: user@example.com / password123</p>
-              </>
-            ) : (
-              <p>Customer: customer@example.com / password123</p>
-            )}
-          </div>
+        <div className="mt-4 text-xs text-muted-foreground">
+          <details>
+            <summary>Debug Info (Dev Only)</summary>
+            <div className="mt-2 p-2 bg-muted rounded text-xs space-y-1">
+              <div>
+                <strong>Form Errors:</strong>
+              </div>
+              {Object.entries(errors).map(([field, error]) => (
+                <div key={field}>
+                  • {field}: {error?.message || "No message"}
+                </div>
+              ))}
+              {Object.keys(errors).length === 0 && (
+                <div className="text-muted-foreground">No form errors</div>
+              )}
+              {error && (
+                <div className="mt-2">
+                  <strong>General Error:</strong> {error}
+                </div>
+              )}
+            </div>
+          </details>
         </div>
       )}
     </div>
