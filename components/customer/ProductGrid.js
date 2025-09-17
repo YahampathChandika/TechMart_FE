@@ -17,47 +17,101 @@ export const ProductGrid = ({
   showSorting = true,
   showViewToggle = true,
   onFilterToggle = null,
-  defaultView = "grid", // "grid" or "list"
+  onSortChange = null, // New prop for handling sort changes
+  currentSort = null, // Current sort value from parent
+  defaultView = "grid",
+  useLocalSorting = false, // Flag to enable local sorting for some use cases
 }) => {
   const [viewMode, setViewMode] = useState(defaultView);
-  const [sortBy, setSortBy] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
 
-  // Sort products
-  const sortedProducts = [...products].sort((a, b) => {
-    let comparison = 0;
+  // Local sorting state (only used when useLocalSorting is true)
+  const [localSortBy, setLocalSortBy] = useState("name");
+  const [localSortOrder, setLocalSortOrder] = useState("asc");
 
-    switch (sortBy) {
-      case "name":
-        comparison = a.name.localeCompare(b.name);
-        break;
-      case "price":
-        comparison = a.sell_price - b.sell_price;
-        break;
-      case "rating":
-        comparison = b.rating - a.rating; // Higher rating first
-        break;
-      case "brand":
-        comparison = a.brand.localeCompare(b.brand);
-        break;
-      case "newest":
-        comparison = new Date(b.created_at) - new Date(a.created_at);
-        break;
-      default:
-        comparison = 0;
-    }
+  // Determine which products to display
+  const displayProducts = useLocalSorting ? getLocalSortedProducts() : products;
 
-    return sortOrder === "asc" ? comparison : -comparison;
-  });
+  // Local sorting function (only used when useLocalSorting is true)
+  function getLocalSortedProducts() {
+    return [...products].sort((a, b) => {
+      let comparison = 0;
 
-  const handleSortChange = (newSortBy) => {
-    if (sortBy === newSortBy) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(newSortBy);
-      setSortOrder("asc");
+      switch (localSortBy) {
+        case "name":
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case "price":
+          comparison = a.sell_price - b.sell_price;
+          break;
+        case "rating":
+          comparison = b.rating - a.rating;
+          break;
+        case "brand":
+          comparison = a.brand.localeCompare(b.brand);
+          break;
+        case "newest":
+          comparison = new Date(b.created_at) - new Date(a.created_at);
+          break;
+        default:
+          comparison = 0;
+      }
+
+      return localSortOrder === "asc" ? comparison : -comparison;
+    });
+  }
+
+  // Handle sort changes
+  const handleSortChange = (sortKey) => {
+    if (useLocalSorting) {
+      // Handle local sorting
+      if (localSortBy === sortKey) {
+        setLocalSortOrder(localSortOrder === "asc" ? "desc" : "asc");
+      } else {
+        setLocalSortBy(sortKey);
+        setLocalSortOrder("asc");
+      }
+    } else if (onSortChange) {
+      // Handle API sorting - map to API sort values
+      const sortMapping = {
+        name: "name",
+        price: "price_low", // Default to low to high, could be toggled
+        rating: "rating",
+        newest: "newest",
+      };
+
+      let apiSortValue = sortMapping[sortKey];
+
+      // Toggle price sorting between low and high
+      if (sortKey === "price") {
+        if (currentSort === "price_low") {
+          apiSortValue = "price_high";
+        } else {
+          apiSortValue = "price_low";
+        }
+      }
+
+      onSortChange({ sort: apiSortValue });
     }
   };
+
+  // Get current sort state for display
+  const getCurrentSortState = () => {
+    if (useLocalSorting) {
+      return { sortBy: localSortBy, sortOrder: localSortOrder };
+    } else {
+      // Map API sort values back to local keys for display
+      const apiToLocal = {
+        name: { sortBy: "name", sortOrder: "asc" },
+        price_low: { sortBy: "price", sortOrder: "asc" },
+        price_high: { sortBy: "price", sortOrder: "desc" },
+        rating: { sortBy: "rating", sortOrder: "desc" },
+        newest: { sortBy: "newest", sortOrder: "desc" },
+      };
+      return apiToLocal[currentSort] || { sortBy: null, sortOrder: "asc" };
+    }
+  };
+
+  const { sortBy, sortOrder } = getCurrentSortState();
 
   if (loading) {
     return (
@@ -123,7 +177,7 @@ export const ProductGrid = ({
           {/* Right side - Sorting and View Toggle */}
           <div className="flex items-center gap-2">
             {/* Sorting */}
-            {showSorting && (
+            {/* {showSorting && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground hidden sm:inline">
                   Sort by:
@@ -141,6 +195,7 @@ export const ProductGrid = ({
                       size="sm"
                       onClick={() => handleSortChange(key)}
                       className="flex items-center gap-1"
+                      disabled={!useLocalSorting && !onSortChange}
                     >
                       {label}
                       {sortBy === key && (
@@ -155,7 +210,7 @@ export const ProductGrid = ({
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* View Toggle */}
             {showViewToggle && (
@@ -185,7 +240,7 @@ export const ProductGrid = ({
       {/* Products Grid/List */}
       {viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedProducts.map((product) => (
+          {displayProducts.map((product) => (
             <ProductCard
               key={product.id}
               product={product}
@@ -195,7 +250,7 @@ export const ProductGrid = ({
         </div>
       ) : (
         <div className="space-y-4">
-          {sortedProducts.map((product) => (
+          {displayProducts.map((product) => (
             <div
               key={product.id}
               className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow"
@@ -230,7 +285,7 @@ export const ProductGrid = ({
   );
 };
 
-// Simplified version without toolbar
+// Simplified version without toolbar (uses local sorting)
 export const SimpleProductGrid = ({ products, className = "" }) => (
   <div
     className={cn(
@@ -244,7 +299,7 @@ export const SimpleProductGrid = ({ products, className = "" }) => (
   </div>
 );
 
-// Featured products grid (larger cards)
+// Featured products grid (uses local sorting)
 export const FeaturedProductGrid = ({ products, className = "" }) => (
   <div
     className={cn(

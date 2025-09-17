@@ -1,4 +1,4 @@
-// app/(customer)/products/page.js
+// app/(customer)/products/page.js - Updated to work with new ProductGrid
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -22,7 +22,7 @@ export default function ProductsPage() {
     min_price: searchParams.get("min_price") || "",
     max_price: searchParams.get("max_price") || "",
     rating: searchParams.get("rating") || "",
-    in_stock: searchParams.get("in_stock") === "true",
+    in_stock: searchParams.get("in_stock") === "true" || false,
     sort: searchParams.get("sort") || "name",
     per_page: 12,
   });
@@ -46,10 +46,23 @@ export default function ProductsPage() {
     [searchQuery]
   );
 
-  // Handle filter changes
+  // Handle filter changes (from sidebar or ProductGrid)
   const handleFilterChange = useCallback((newFilters) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
+    console.log("Changing filters:", newFilters);
+    setFilters((prev) => {
+      const updated = { ...prev, ...newFilters };
+      console.log("Updated filters:", updated);
+      return updated;
+    });
   }, []);
+
+  // Handle sort changes specifically (for the main dropdown and ProductGrid toolbar)
+  const handleSortChange = useCallback(
+    (sortValue) => {
+      handleFilterChange({ sort: sortValue });
+    },
+    [handleFilterChange]
+  );
 
   // Handle clear filters
   const handleClearFilters = useCallback(() => {
@@ -83,9 +96,9 @@ export default function ProductsPage() {
 
       {/* Search Bar */}
       <div className="mb-6">
-        <form onSubmit={handleSearch} className="flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search products..."
@@ -94,44 +107,30 @@ export default function ProductsPage() {
               className="pl-10"
             />
           </div>
-          <Button type="submit">Search</Button>
+          <Button type="submit" disabled={loading}>
+            Search
+          </Button>
         </form>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Filters Sidebar */}
-        <div className="lg:w-64 flex-shrink-0">
-          {/* Mobile filter toggle */}
-          <div className="lg:hidden mb-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="w-full flex items-center justify-center gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              {showFilters ? "Hide Filters" : "Show Filters"}
-            </Button>
-          </div>
-
-          {/* Filter panel */}
-          <div
-            className={`${showFilters ? "block" : "hidden"} lg:block space-y-6`}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Filters</h3>
+      <div className="flex gap-8">
+        {/* Sidebar Filters */}
+        <div className="hidden lg:block w-80 flex-shrink-0">
+          <div className="sticky top-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Filters</h2>
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleClearFilters}
-                  className="flex items-center gap-2"
+                  className="text-sm"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4 mr-1" />
                   Clear All
                 </Button>
               )}
             </div>
-
             <SearchFilters
               filters={filters}
               availableFilters={availableFilters}
@@ -140,11 +139,23 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Products Content */}
-        <div className="flex-1">
-          {/* Results Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
+        {/* Main Content */}
+        <div className="flex-1 min-w-0">
+          {/* Mobile Filters Toggle & Sort Dropdown */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div className="flex items-center gap-4">
+              {/* Mobile Filter Toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="lg:hidden"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+
+              {/* Results count */}
               {loading ? (
                 <p className="text-muted-foreground">Loading products...</p>
               ) : meta ? (
@@ -154,13 +165,13 @@ export default function ProductsPage() {
               ) : null}
             </div>
 
-            {/* Sort Options */}
+            {/* Sort Dropdown */}
             <div className="flex items-center gap-2">
               <label className="text-sm text-muted-foreground">Sort by:</label>
               <select
                 value={filters.sort}
-                onChange={(e) => handleFilterChange({ sort: e.target.value })}
-                className="px-3 py-1 border rounded-md text-sm"
+                onChange={(e) => handleSortChange(e.target.value)}
+                className="px-3 py-1 border rounded-md text-sm bg-background"
               >
                 <option value="name">Name</option>
                 <option value="price_low">Price: Low to High</option>
@@ -171,6 +182,27 @@ export default function ProductsPage() {
               </select>
             </div>
           </div>
+
+          {/* Mobile Filters */}
+          {showFilters && (
+            <div className="lg:hidden mb-6 p-4 border rounded-lg bg-background">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Filters</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowFilters(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <SearchFilters
+                filters={filters}
+                availableFilters={availableFilters}
+                onChange={handleFilterChange}
+              />
+            </div>
+          )}
 
           {/* Products Display */}
           {loading ? (
@@ -187,91 +219,41 @@ export default function ProductsPage() {
                 onClick: refresh,
               }}
             />
-          ) : products.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="mb-4">
-                <Search className="mx-auto h-16 w-16 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">No products found</h3>
-              <p className="text-muted-foreground mb-4">
-                {hasActiveFilters
-                  ? "Try adjusting your filters to see more results."
-                  : "No products are currently available."}
-              </p>
-              {hasActiveFilters && (
-                <Button variant="outline" onClick={handleClearFilters}>
-                  Clear Filters
-                </Button>
-              )}
-            </div>
           ) : (
-            <>
-              <ProductGrid
-                products={products}
-                showToolbar={true}
-                showSorting={false} // We have our own sorting above
-              />
+            <ProductGrid
+              products={products}
+              loading={loading}
+              error={error}
+              showFilters={false} // Don't show filters button since we have sidebar
+              showSorting={true} // Show sorting toolbar buttons
+              showViewToggle={true}
+              onSortChange={handleFilterChange} // Pass filter change handler
+              currentSort={filters.sort} // Pass current sort for highlighting
+              useLocalSorting={false} // Use API sorting, not local sorting
+            />
+          )}
 
-              {/* Pagination */}
-              {meta && meta.last_page > 1 && (
-                <div className="mt-8 flex justify-center">
-                  <div className="flex items-center space-x-2">
+          {/* Pagination */}
+          {meta && meta.last_page > 1 && (
+            <div className="mt-8 flex justify-center">
+              <div className="flex gap-2">
+                {Array.from({ length: meta.last_page }, (_, i) => i + 1).map(
+                  (page) => (
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(meta.current_page - 1)}
-                      disabled={meta.current_page === 1}
-                    >
-                      Previous
-                    </Button>
-
-                    {[...Array(meta.last_page)].map((_, index) => {
-                      const page = index + 1;
-                      const isCurrentPage = page === meta.current_page;
-                      const shouldShow =
-                        page === 1 ||
-                        page === meta.last_page ||
-                        (page >= meta.current_page - 2 &&
-                          page <= meta.current_page + 2);
-
-                      if (!shouldShow) {
-                        if (
-                          page === meta.current_page - 3 ||
-                          page === meta.current_page + 3
-                        ) {
-                          return (
-                            <span key={page} className="px-2">
-                              ...
-                            </span>
-                          );
-                        }
-                        return null;
+                      key={page}
+                      variant={
+                        page === meta.current_page ? "default" : "outline"
                       }
-
-                      return (
-                        <Button
-                          key={page}
-                          variant={isCurrentPage ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handlePageChange(page)}
-                        >
-                          {page}
-                        </Button>
-                      );
-                    })}
-
-                    <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => handlePageChange(meta.current_page + 1)}
-                      disabled={meta.current_page === meta.last_page}
+                      onClick={() => handlePageChange(page)}
+                      disabled={loading}
                     >
-                      Next
+                      {page}
                     </Button>
-                  </div>
-                </div>
-              )}
-            </>
+                  )
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>
