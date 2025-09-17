@@ -1,10 +1,11 @@
-// hooks/useProducts.js
+// hooks/useProducts.js - UPDATED VERSION
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { authAPI } from "@/lib/api";
 
-export const useProducts = (params = {}) => {
+// Hook for admin product management (uses admin endpoints)
+export const useProducts = (params = {}, isAdmin = true) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,12 +17,17 @@ export const useProducts = (params = {}) => {
       setLoading(true);
       setError(null);
 
-      const response = await authAPI.getProducts(params);
+      // Use admin or public endpoint based on context
+      const response = isAdmin
+        ? await authAPI.getProducts(params) // Admin endpoint: /api/admin/products
+        : await authAPI.getPublicProducts(params); // Public endpoint: /api/products
 
       if (response.success) {
-        setProducts(response.data || []);
-        setMeta(response.meta);
-        setFilters(response.filters);
+        // Handle different response structures
+        const productsData = response.data?.data || response.data || [];
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setMeta(response.meta || response.data?.meta || null);
+        setFilters(response.filters || response.data?.filters || null);
       } else {
         throw new Error(response.error || "Failed to fetch products");
       }
@@ -32,7 +38,7 @@ export const useProducts = (params = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [JSON.stringify(params)]);
+  }, [JSON.stringify(params), isAdmin]);
 
   useEffect(() => {
     fetchProducts();
@@ -52,7 +58,8 @@ export const useProducts = (params = {}) => {
   };
 };
 
-export const useProduct = (id) => {
+// Hook for getting a single product (context-aware)
+export const useProduct = (id, isAdmin = true) => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -67,10 +74,14 @@ export const useProduct = (id) => {
       setLoading(true);
       setError(null);
 
-      const response = await authAPI.getProduct(id);
+      // Use admin or public endpoint based on context
+      const response = isAdmin
+        ? await authAPI.getProduct(id) // Admin endpoint: /api/admin/products/{id}
+        : await authAPI.getPublicProduct(id); // Public endpoint: /api/products/{id}
 
       if (response.success) {
-        setProduct(response.data);
+        const productData = response.data?.product || response.data;
+        setProduct(productData);
       } else {
         throw new Error(response.error || "Product not found");
       }
@@ -81,7 +92,7 @@ export const useProduct = (id) => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, isAdmin]);
 
   useEffect(() => {
     fetchProduct();
@@ -99,33 +110,51 @@ export const useProduct = (id) => {
   };
 };
 
-export const useProductSearch = () => {
+// Hook specifically for admin product management
+export const useAdminProducts = (params = {}) => {
+  return useProducts(params, true);
+};
+
+// Hook specifically for public/customer product browsing
+export const usePublicProducts = (params = {}) => {
+  return useProducts(params, false);
+};
+
+// Hook for product search (context-aware)
+export const useProductSearch = (isAdmin = false) => {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [meta, setMeta] = useState(null);
 
-  const searchProducts = useCallback(async (searchParams) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const searchProducts = useCallback(
+    async (searchParams) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const response = await authAPI.searchProducts(searchParams);
+        // Use appropriate search endpoint
+        const response = isAdmin
+          ? await authAPI.getProducts(searchParams) // Admin search with all filters
+          : await authAPI.searchPublicProducts(searchParams); // Public search
 
-      if (response.success) {
-        setSearchResults(response.data || []);
-        setMeta(response.meta);
-      } else {
-        throw new Error(response.error || "Search failed");
+        if (response.success) {
+          const resultsData = response.data?.data || response.data || [];
+          setSearchResults(Array.isArray(resultsData) ? resultsData : []);
+          setMeta(response.meta || response.data?.meta || null);
+        } else {
+          throw new Error(response.error || "Search failed");
+        }
+      } catch (err) {
+        console.error("Error searching products:", err);
+        setError(err.message);
+        setSearchResults([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error searching products:", err);
-      setError(err.message);
-      setSearchResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [isAdmin]
+  );
 
   const clearSearch = useCallback(() => {
     setSearchResults([]);

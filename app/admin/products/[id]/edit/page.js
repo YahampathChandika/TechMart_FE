@@ -1,4 +1,4 @@
-// app/(admin)/products/[id]/edit/page.js
+// app/admin/products/[id]/edit/page.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,7 +10,7 @@ import { ProductForm } from "@/components/admin/ProductForm";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
 import { permissions } from "@/lib/auth";
-import { getProductById, mockProducts } from "@/lib/mockData";
+import { authAPI } from "@/lib/api";
 import { SUCCESS_MESSAGES } from "@/lib/constants";
 
 function EditProductPageContent({ productId }) {
@@ -24,19 +24,24 @@ function EditProductPageContent({ productId }) {
   // Permission check
   const canUpdate = permissions.canUpdateProducts(user, null);
 
-  // Load product data
+  // Load product data from backend API
   useEffect(() => {
     const loadProduct = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        const result = await authAPI.getProduct(parseInt(productId));
 
-        // Get product from mock data
-        const productData = getProductById(parseInt(productId));
+        if (!result.success) {
+          if (result.status === 404) {
+            notFound();
+            return;
+          }
+          throw new Error(result.error || "Failed to load product");
+        }
 
+        const productData = result.data?.product || result.data;
         if (!productData) {
           notFound();
           return;
@@ -45,7 +50,7 @@ function EditProductPageContent({ productId }) {
         setProduct(productData);
       } catch (err) {
         console.error("Failed to load product:", err);
-        setError("Failed to load product. Please try again.");
+        setError(err.message || "Failed to load product. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -64,30 +69,41 @@ function EditProductPageContent({ productId }) {
     setSubmitting(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // In real app, this would be an API call
-      // For now, update in mock data
-      const updatedProduct = {
-        ...product,
-        ...formData,
-        updated_at: new Date().toISOString(),
+      // Prepare product data for API
+      const productData = {
+        name: formData.name,
+        description: formData.description || "",
+        brand: formData.brand,
+        category: formData.category || "",
+        buy_price: parseFloat(formData.buy_price) || 0,
+        sell_price: parseFloat(formData.sell_price) || 0,
+        quantity: parseInt(formData.quantity) || 0,
+        rating: parseFloat(formData.rating) || 0,
+        is_active: formData.is_active !== undefined ? formData.is_active : true,
+        // Note: Image handling would need to be implemented separately
       };
 
-      // Update in mock data
-      const index = mockProducts.findIndex((p) => p.id === product.id);
-      if (index !== -1) {
-        mockProducts[index] = updatedProduct;
+      console.log("Updating product with data:", productData);
+
+      const result = await authAPI.updateProduct(
+        parseInt(productId),
+        productData
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to update product");
       }
 
+      const updatedProduct = result.data?.product || result.data;
       setProduct(updatedProduct);
+
       console.log(SUCCESS_MESSAGES.PRODUCT_UPDATED, updatedProduct);
 
-      // Redirect will be handled by ProductForm component
+      // Redirect to products list
+      router.push("/admin/products");
     } catch (err) {
       console.error("Failed to update product:", err);
-      throw err;
+      throw err; // Re-throw so ProductForm can handle it
     } finally {
       setSubmitting(false);
     }
@@ -102,16 +118,16 @@ function EditProductPageContent({ productId }) {
       <div className="max-w-2xl mx-auto p-6">
         <ErrorMessage
           title="Access Denied"
-          message="You don't have permission to edit products. Contact your administrator to request access."
+          message="You don't have permission to edit products."
+          extraActions={
+            <button
+              onClick={() => router.push("/admin/products")}
+              className="text-primary hover:underline text-sm"
+            >
+              Back to Products
+            </button>
+          }
         />
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => router.push("/admin/products")}
-            className="text-primary hover:underline"
-          >
-            Back to Products
-          </button>
-        </div>
       </div>
     );
   }
@@ -126,20 +142,26 @@ function EditProductPageContent({ productId }) {
 
   if (error) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold">Edit Product</h1>
+          <p className="text-muted-foreground">Update product information</p>
+        </div>
+
         <ErrorMessage
           title="Failed to Load Product"
           message={error}
           onRetry={() => window.location.reload()}
+          extraActions={
+            <button
+              onClick={() => router.push("/admin/products")}
+              className="text-primary hover:underline text-sm"
+            >
+              Back to Products
+            </button>
+          }
         />
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => router.push("/admin/products")}
-            className="text-primary hover:underline"
-          >
-            Back to Products
-          </button>
-        </div>
       </div>
     );
   }
@@ -150,13 +172,24 @@ function EditProductPageContent({ productId }) {
   }
 
   return (
-    <ProductForm
-      product={product}
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      loading={submitting}
-      error={null}
-    />
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold">Edit Product</h1>
+        <p className="text-muted-foreground">
+          Update information for "{product.name}"
+        </p>
+      </div>
+
+      {/* Product Form */}
+      <ProductForm
+        product={product}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        loading={submitting}
+        error={null}
+      />
+    </div>
   );
 }
 
@@ -164,7 +197,7 @@ export default function EditProductPage({ params }) {
   const { id } = use(params);
 
   return (
-    <ProductManagementLayout pageTitle="">
+    <ProductManagementLayout pageTitle="Edit Product">
       <EditProductPageContent productId={id} />
     </ProductManagementLayout>
   );

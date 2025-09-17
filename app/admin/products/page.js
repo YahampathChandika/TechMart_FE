@@ -1,16 +1,16 @@
-// app/(admin)/products/page.js
+// app/admin/products/page.js
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Package, Download, Upload } from "lucide-react";
+import { Plus, Package, Download, Upload, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductManagementLayout } from "@/components/admin/AdminLayout";
 import { ProductTable } from "@/components/admin/ProductTable";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
 import { permissions } from "@/lib/auth";
-import { mockProducts } from "@/lib/mockData";
+import { authAPI } from "@/lib/api";
 import { SUCCESS_MESSAGES } from "@/lib/constants";
 
 function ProductsPageContent() {
@@ -19,29 +19,67 @@ function ProductsPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    lowStock: 0,
+    outOfStock: 0,
+  });
 
   // Permission checks
   const canAdd = permissions.canAddProducts(user, null);
   const canUpdate = permissions.canUpdateProducts(user, null);
   const canDelete = permissions.canDeleteProducts(user, null);
 
-  // Load products
+  // Load products from backend API
   const loadProducts = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const result = await authAPI.getProducts();
 
-      // In real app, this would be an API call
-      setProducts([...mockProducts]);
+      if (!result.success) {
+        throw new Error(result.error || "Failed to load products");
+      }
+
+      const productsData = result.data?.data || result.data || [];
+      setProducts(Array.isArray(productsData) ? productsData : []);
+
+      // Calculate stats from the loaded products
+      calculateStats(productsData);
     } catch (err) {
       console.error("Failed to load products:", err);
-      setError("Failed to load products. Please try again.");
+      setError(err.message || "Failed to load products. Please try again.");
+      setProducts([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Calculate statistics from products data
+  const calculateStats = (productsData) => {
+    if (!Array.isArray(productsData)) {
+      setStats({
+        total: 0,
+        active: 0,
+        inactive: 0,
+        lowStock: 0,
+        outOfStock: 0,
+      });
+      return;
+    }
+
+    const total = productsData.length;
+    const active = productsData.filter((p) => p.is_active).length;
+    const inactive = total - active;
+    const lowStock = productsData.filter(
+      (p) => p.quantity > 0 && p.quantity <= 10
+    ).length;
+    const outOfStock = productsData.filter((p) => p.quantity === 0).length;
+
+    setStats({ total, active, inactive, lowStock, outOfStock });
   };
 
   // Handle product deletion
@@ -49,18 +87,23 @@ function ProductsPageContent() {
     setActionLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const result = await authAPI.deleteProduct(productId);
 
-      // In real app, this would be an API call
-      // For now, remove from local state
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
+      if (!result.success) {
+        throw new Error(result.error || "Failed to delete product");
+      }
 
-      // Show success message
+      // Remove product from local state
+      setProducts((prev) => {
+        const updated = prev.filter((p) => p.id !== productId);
+        calculateStats(updated);
+        return updated;
+      });
+
       console.log(SUCCESS_MESSAGES.PRODUCT_DELETED);
     } catch (err) {
       console.error("Failed to delete product:", err);
-      setError("Failed to delete product. Please try again.");
+      setError(err.message || "Failed to delete product. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -71,13 +114,27 @@ function ProductsPageContent() {
     setActionLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Find the product to update
+      const product = products.find((p) => p.id === productId);
+      if (!product) {
+        throw new Error("Product not found");
+      }
 
-      // In real app, this would be an API call
-      // For now, update local state
-      setProducts((prev) =>
-        prev.map((p) =>
+      // Update product with new status
+      const updateData = {
+        ...product,
+        is_active: newStatus,
+      };
+
+      const result = await authAPI.updateProduct(productId, updateData);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to update product status");
+      }
+
+      // Update product in local state
+      setProducts((prev) => {
+        const updated = prev.map((p) =>
           p.id === productId
             ? {
                 ...p,
@@ -85,15 +142,19 @@ function ProductsPageContent() {
                 updated_at: new Date().toISOString(),
               }
             : p
-        )
-      );
+        );
+        calculateStats(updated);
+        return updated;
+      });
 
       console.log(
         `Product ${newStatus ? "activated" : "deactivated"} successfully`
       );
     } catch (err) {
-      console.error("Failed to update product status:", err);
-      setError("Failed to update product status. Please try again.");
+      console.error("Failed to toggle product status:", err);
+      setError(
+        err.message || "Failed to update product status. Please try again."
+      );
     } finally {
       setActionLoading(false);
     }
@@ -104,12 +165,9 @@ function ProductsPageContent() {
     loadProducts();
   }, []);
 
-  const stats = {
-    total: products.length,
-    active: products.filter((p) => p.is_active).length,
-    inactive: products.filter((p) => !p.is_active).length,
-    lowStock: products.filter((p) => p.quantity < 20 && p.is_active).length,
-    outOfStock: products.filter((p) => p.quantity === 0).length,
+  // Handle refresh
+  const handleRefresh = () => {
+    loadProducts();
   };
 
   return (
@@ -117,28 +175,34 @@ function ProductsPageContent() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Product Management</h1>
+          <h1 className="text-3xl font-bold">Products</h1>
           <p className="text-muted-foreground">
-            Manage your store&apos;s product inventory and information
+            Manage your product inventory and listings
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Export/Import Actions */}
+          {/* Action Buttons */}
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
+              onClick={handleRefresh}
+              disabled={loading}
               className="flex items-center gap-2"
             >
+              <RefreshCw
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+
+            <Button variant="outline" size="sm" disabled>
               <Download className="h-4 w-4" />
               Export
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
+
+            <Button variant="outline" size="sm" disabled>
               <Upload className="h-4 w-4" />
               Import
             </Button>
@@ -209,34 +273,31 @@ function ProductsPageContent() {
         />
       )}
 
-      {/* Products Table */}
-      <div className="bg-background border rounded-lg">
-        <ProductTable
-          products={products}
-          loading={loading}
-          error={null}
-          onDelete={canDelete ? handleDelete : null}
-          onToggleActive={canUpdate ? handleToggleActive : null}
-          onRefresh={loadProducts}
-        />
-      </div>
+      {/* Loading State */}
+      {loading && !error && (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" text="Loading products..." />
+        </div>
+      )}
 
-      {/* No Permission Message */}
-      {!canAdd && !canUpdate && !canDelete && (
-        <div className="text-center py-8">
-          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <h3 className="text-lg font-medium mb-2">Limited Access</h3>
-          <p className="text-muted-foreground">
-            You have read-only access to products. Contact your administrator
-            for additional permissions.
-          </p>
+      {/* Products Table */}
+      {!loading && (
+        <div className="bg-background border rounded-lg">
+          <ProductTable
+            products={products}
+            loading={actionLoading}
+            error={null}
+            onDelete={canDelete ? handleDelete : null}
+            onToggleActive={canUpdate ? handleToggleActive : null}
+            onRefresh={handleRefresh}
+          />
         </div>
       )}
     </div>
   );
 }
 
-export default function AdminProductsPage() {
+export default function ProductsPage() {
   return (
     <ProductManagementLayout pageTitle="">
       <ProductsPageContent />

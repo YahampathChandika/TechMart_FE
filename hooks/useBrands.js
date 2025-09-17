@@ -1,4 +1,4 @@
-// hooks/useBrands.js
+// hooks/useBrands.js - UPDATED VERSION
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -15,12 +15,13 @@ export const useBrands = () => {
       setError(null);
 
       console.log("Fetching brands from API...");
-      const response = await authAPI.getBrands();
+      const response = await authAPI.getBrands(); // Uses public endpoint /api/products/brands
       console.log("Brands API response:", response);
 
       if (response.success) {
-        setBrands(response.data || []);
-        console.log("Brands loaded:", response.data);
+        const brandsData = response.data?.brands || response.data || [];
+        setBrands(Array.isArray(brandsData) ? brandsData : []);
+        console.log("Brands loaded:", brandsData);
       } else {
         throw new Error(response.error || "Failed to fetch brands");
       }
@@ -60,12 +61,13 @@ export const useFilterOptions = () => {
       setError(null);
 
       console.log("Fetching filter options from API...");
-      const response = await authAPI.getFilterOptions();
+      const response = await authAPI.getFilterOptions(); // Uses public endpoint /api/products/filters
       console.log("Filter options API response:", response);
 
       if (response.success) {
-        setFilterOptions(response.data || {});
-        console.log("Filter options loaded:", response.data);
+        const optionsData = response.data?.filters || response.data || {};
+        setFilterOptions(optionsData);
+        console.log("Filter options loaded:", optionsData);
       } else {
         throw new Error(response.error || "Failed to fetch filter options");
       }
