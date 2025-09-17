@@ -1,7 +1,9 @@
 // components/common/ErrorMessage.js
+"use client";
 import { AlertCircle, X, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export const ErrorMessage = ({
   title = "Error",
@@ -11,6 +13,7 @@ export const ErrorMessage = ({
   onRetry = null,
   onDismiss = null,
   retryText = "Try Again",
+  extraActions = null, 
 }) => {
   const variants = {
     default:
@@ -30,8 +33,8 @@ export const ErrorMessage = ({
           <h3 className="text-sm font-medium">{title}</h3>
           {message && <p className="mt-1 text-sm opacity-90">{message}</p>}
 
-          {(onRetry || onDismiss) && (
-            <div className="mt-3 flex gap-2">
+          {(onRetry || onDismiss || extraActions) && (
+            <div className="mt-3 flex gap-2 flex-wrap">
               {onRetry && (
                 <Button
                   size="sm"
@@ -53,6 +56,7 @@ export const ErrorMessage = ({
                   Dismiss
                 </Button>
               )}
+              {extraActions}
             </div>
           )}
         </div>
@@ -102,13 +106,27 @@ export const NotFoundError = ({
   />
 );
 
-export const UnauthorizedError = ({ onLogin = null, className = "" }) => (
-  <ErrorMessage
-    title="Access Denied"
-    message="You don't have permission to access this resource."
-    variant="destructive"
-    onRetry={onLogin}
-    retryText="Login"
-    className={className}
-  />
-);
+export const UnauthorizedError = ({ onLogin = null, className = "" }) => {
+  const router = useRouter();
+
+  return (
+    <ErrorMessage
+      title="Access Denied"
+      message="You don't have permission to access this resource."
+      variant="destructive"
+      onRetry={onLogin}
+      retryText="Login"
+      className={className}
+      extraActions={
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8"
+          onClick={() => router.push("/")}
+        >
+          Go Home
+        </Button>
+      }
+    />
+  );
+};
