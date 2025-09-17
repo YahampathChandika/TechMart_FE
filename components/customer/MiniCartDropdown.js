@@ -1,103 +1,97 @@
 // components/customer/MiniCartDropdown.js
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { ShoppingCart, X, ArrowRight } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CartItemCompact } from "./CartItem";
-import { MiniCartSummary } from "./CartSummary";
-import { useCart } from "@/hooks";
+import { Badge } from "@/components/ui/badge";
+import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
 
-export const MiniCartDropdown = ({ isOpen, onClose, className = "" }) => {
-  const { cartItems, getCartWithProducts, getCartStats } = useCart();
-  const cartWithProducts = getCartWithProducts();
-  const stats = getCartStats();
+export const MiniCartDropdown = ({ onClose, className = "" }) => {
+  const { cartItems, cartTotals, updateCartItem, removeFromCart } = useCart();
 
-  if (!isOpen) return null;
+  const items = Array.isArray(cartItems) ? cartItems : [];
+
+  if (items.length === 0) {
+    return (
+      <div className={cn("p-4 text-center", className)}>
+        <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+        <p className="text-muted-foreground mb-4">Your cart is empty</p>
+        <Button asChild variant="outline" onClick={onClose}>
+          <Link href="/products">Continue Shopping</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-40 lg:hidden" onClick={onClose} />
-
-      {/* Dropdown */}
-      <div
-        className={cn(
-          "absolute right-0 mt-2 w-80 bg-background border rounded-lg shadow-lg z-50",
-          "max-h-[80vh] flex flex-col",
-          className
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-semibold flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4" />
-            Shopping Cart ({stats.itemCount})
-          </h3>
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Content */}
-        {cartWithProducts.length === 0 ? (
-          /* Empty Cart */
-          <div className="p-6 text-center">
-            <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-            <h4 className="font-medium mb-2">Your cart is empty</h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Add some products to get started!
-            </p>
-            <Link href="/products" onClick={onClose}>
-              <Button size="sm" className="w-full">
-                Browse Products
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          /* Cart Items */
-          <div className="flex flex-col min-h-0">
-            {/* Items List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-64">
-              {cartWithProducts.slice(0, 5).map((cartItem) => (
-                <CartItemCompact
-                  key={cartItem.product_id}
-                  cartItem={cartItem}
-                />
-              ))}
-
-              {cartWithProducts.length > 5 && (
-                <div className="text-center py-2 text-sm text-muted-foreground">
-                  + {cartWithProducts.length - 5} more items
-                </div>
-              )}
-            </div>
-
-            {/* Summary */}
-            <div className="border-t">
-              <MiniCartSummary />
-            </div>
-          </div>
-        )}
+    <div
+      className={cn("w-80 bg-background backdrop-blur rounded-lg", className)}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b">
+        <h3 className="font-semibold">Shopping Cart</h3>
+        <Badge variant="secondary">{cartTotals.itemCount} items</Badge>
       </div>
-    </>
+
+      {/* Cart Items */}
+      <div className="max-h-64 overflow-y-auto">
+        {items.map((item) => (
+          <div key={item.id} className="p-4 border-b">
+            <div className="flex items-start space-x-3">
+              {/* Product Image Placeholder */}
+              <div className="w-12 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+              </div>
+
+              {/* Product Details */}
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium truncate flex justify-between gap-2">
+                  {item.product?.name || `Product ${item.product_id}`}
+                  <Badge variant="secondary">{item.quantity}</Badge>
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  {item.product?.brand || "Unknown Brand"}
+                </p>
+                <p className="text-sm font-medium text-primary">
+                  ${parseFloat(item.product?.sell_price || 0).toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t">
+        {/* Totals */}
+        <div className="space-y-2 mb-4">
+          <div className="flex justify-between text-sm">
+            <span>Subtotal:</span>
+            <span>${cartTotals.subtotal}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Shipping:</span>
+            <span>${cartTotals.shipping}</span>
+          </div>
+          <div className="flex justify-between font-semibold">
+            <span>Total:</span>
+            <span className="text-primary">${cartTotals.total}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
-// Hook to manage mini cart state
 export const useMiniCart = () => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const openCart = () => setIsOpen(true);
-  const closeCart = () => setIsOpen(false);
-  const toggleCart = () => setIsOpen(!isOpen);
+  const { cartItems, cartTotals } = useCart();
 
   return {
-    isOpen,
-    openCart,
-    closeCart,
-    toggleCart,
+    items: Array.isArray(cartItems) ? cartItems : [],
+    itemCount: cartTotals.itemCount,
+    total: cartTotals.total,
+    hasItems: Array.isArray(cartItems) && cartItems.length > 0,
   };
 };

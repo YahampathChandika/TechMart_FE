@@ -5,21 +5,33 @@ import Link from "next/link";
 import { ArrowRight, Star, Package, Truck, Shield, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeaturedProductGrid } from "@/components/customer/ProductGrid";
+import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
-import { getActiveProducts } from "@/lib/mockData";
+import { useProducts } from "@/hooks/useProducts";
 
 export default function CustomerHomepage() {
   const { isCustomer, customer } = useAuth();
 
   // Get featured products (highest rated and in stock)
-  const allProducts = getActiveProducts();
-  const featuredProducts = allProducts
-    .filter((product) => product.rating >= 4 && product.quantity > 0)
-    .slice(0, 6);
+  const {
+    products: featuredProducts,
+    loading: featuredLoading,
+    error: featuredError,
+  } = useProducts({
+    rating: 4,
+    in_stock: true,
+    per_page: 6,
+  });
 
-  const newArrivals = allProducts
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 3);
+  // Get new arrivals
+  const {
+    products: newArrivals,
+    loading: newLoading,
+    error: newError,
+  } = useProducts({
+    sort: "newest",
+    per_page: 3,
+  });
 
   const benefits = [
     {
@@ -45,7 +57,7 @@ export default function CustomerHomepage() {
   ];
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-16 pb-10">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-8 md:p-16">
         <div className="max-w-4xl mx-auto text-center">
@@ -62,34 +74,30 @@ export default function CustomerHomepage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/products">
               <Button size="lg" className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Shop All Products
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/search">
-              <Button
-                variant="outline"
-                size="lg"
-                className="flex items-center gap-2"
-              >
                 <Search className="h-5 w-5" />
-                Advanced Search
+                Shop Now
               </Button>
             </Link>
+            {!isCustomer() && (
+              <Link href="/register">
+                <Button variant="outline" size="lg">
+                  Create Account
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </section>
 
       {/* Benefits Section */}
       <section className="container mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {benefits.map((benefit, index) => (
-            <div key={index} className="text-center space-y-3">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {benefits.map((benefit) => (
+            <div key={benefit.title} className="text-center">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <benefit.icon className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold">{benefit.title}</h3>
+              <h3 className="font-semibold mb-2">{benefit.title}</h3>
               <p className="text-sm text-muted-foreground">
                 {benefit.description}
               </p>
@@ -102,26 +110,46 @@ export default function CustomerHomepage() {
       <section className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Featured Products</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Handpicked electronics from top brands. High ratings, quality
-            guarantee, and customer favorites.
+          <p className="text-muted-foreground">
+            High ratings, quality guarantee, and customer favorites.
           </p>
         </div>
 
-        <FeaturedProductGrid products={featuredProducts} />
-
-        <div className="text-center mt-8">
-          <Link href="/products">
-            <Button
-              variant="outline"
-              size="lg"
-              className="flex items-center gap-2 mx-auto"
-            >
-              View All Products
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-          </Link>
-        </div>
+        {featuredLoading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : featuredError ? (
+          <ErrorMessage
+            title="Failed to load featured products"
+            message={featuredError}
+            variant="default"
+          />
+        ) : featuredProducts.length > 0 ? (
+          <>
+            <FeaturedProductGrid products={featuredProducts} />
+            <div className="text-center mt-8">
+              <Link href="/products">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="flex items-center gap-2 mx-auto"
+                >
+                  View All Products
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <Package className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Featured Products</h3>
+            <p className="text-muted-foreground">
+              Check back later for featured products.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* New Arrivals */}
@@ -141,33 +169,63 @@ export default function CustomerHomepage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {newArrivals.map((product) => (
-            <div key={product.id} className="group">
-              <Link href={`/products/${product.id}`}>
-                <div className="relative aspect-square mb-4 overflow-hidden rounded-lg bg-muted border">
-                  <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
-                    New
+        {newLoading ? (
+          <div className="flex justify-center py-8">
+            <LoadingSpinner />
+          </div>
+        ) : newError ? (
+          <ErrorMessage
+            title="Failed to load new arrivals"
+            message={newError}
+            variant="default"
+          />
+        ) : newArrivals.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {newArrivals.map((product) => (
+              <div key={product.id} className="group">
+                <Link href={`/products/${product.id}`}>
+                  <div className="relative aspect-square mb-4 overflow-hidden rounded-lg bg-muted border">
+                    <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
+                      New
+                    </div>
+                    {product.image_path ? (
+                      <img
+                        src={product.image_path}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.nextSibling.style.display = "flex";
+                        }}
+                      />
+                    ) : null}
+                    <div className="flex h-full items-center justify-center group-hover:scale-105 transition-transform">
+                      <Package className="h-16 w-16 text-muted-foreground" />
+                    </div>
                   </div>
-                  <div className="flex h-full items-center justify-center group-hover:scale-105 transition-transform">
-                    <Package className="h-16 w-16 text-muted-foreground" />
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {product.brand}
+                    </p>
+                    <h3 className="font-semibold group-hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                    <p className="text-lg font-bold text-primary">
+                      ${product.sell_price}
+                    </p>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    {product.brand}
-                  </p>
-                  <h3 className="font-semibold group-hover:text-primary transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-lg font-bold text-primary">
-                    ${product.sell_price}
-                  </p>
-                </div>
-              </Link>
-            </div>
-          ))}
-        </div>
+                </Link>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">
+              No new arrivals at the moment.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Categories */}
@@ -175,62 +233,34 @@ export default function CustomerHomepage() {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Shop by Category</h2>
           <p className="text-muted-foreground">
-            Find exactly what you&apos;re looking for
+            Browse our wide selection of electronics
           </p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {["Smartphones", "Laptops", "Gaming", "Audio"].map((category) => (
+          {[
+            {
+              name: "Smartphones",
+              href: "/products?brand=Apple,Samsung",
+              icon: "📱",
+            },
+            { name: "Laptops", href: "/products?category=laptop", icon: "💻" },
+            { name: "Audio", href: "/products?category=audio", icon: "🎧" },
+            { name: "Gaming", href: "/products?category=gaming", icon: "🎮" },
+          ].map((category) => (
             <Link
-              key={category}
-              href={`/search?category=${category.toLowerCase()}`}
-              className="group"
+              key={category.name}
+              href={category.href}
+              className="group p-6 bg-background border rounded-lg hover:shadow-md transition-shadow"
             >
-              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center mb-3 group-hover:bg-muted/80 transition-colors">
-                <Package className="h-12 w-12 text-muted-foreground group-hover:text-foreground transition-colors" />
+              <div className="text-center">
+                <div className="text-4xl mb-4">{category.icon}</div>
+                <h3 className="font-semibold group-hover:text-primary transition-colors">
+                  {category.name}
+                </h3>
               </div>
-              <h3 className="text-center font-medium group-hover:text-primary transition-colors">
-                {category}
-              </h3>
             </Link>
           ))}
-        </div>
-      </section>
-
-      {/* Call to Action */}
-      <section className="bg-primary text-primary-foreground rounded-2xl p-8 md:p-16 text-center">
-        <h2 className="text-3xl font-bold mb-4">Ready to Start Shopping?</h2>
-        <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
-          Join thousands of satisfied customers who trust TechMart for their
-          electronics needs. Quality products, competitive prices, fast
-          delivery.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {!isCustomer() ? (
-            <>
-              <Link href="/register">
-                <Button variant="secondary" size="lg">
-                  Create Account
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-                >
-                  Sign In
-                </Button>
-              </Link>
-            </>
-          ) : (
-            <Link href="/products">
-              <Button variant="secondary" size="lg">
-                Continue Shopping
-              </Button>
-            </Link>
-          )}
         </div>
       </section>
     </div>

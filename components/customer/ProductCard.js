@@ -4,9 +4,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ShoppingCart, Eye, Heart } from "lucide-react";
+import { Star, ShoppingCart, Eye, Heart, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth, useCart } from "@/hooks";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks";
+import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
 import { InlineLoadingSpinner } from "@/components/common";
 
@@ -17,7 +19,12 @@ export const ProductCard = ({
   size = "default", // "default", "compact", "large"
 }) => {
   const { isCustomer } = useAuth();
-  const { addToCart, isInCart, getProductQuantityInCart } = useCart();
+  const {
+    addToCart,
+    isInCart,
+    getProductQuantityInCart,
+    loading: cartLoading,
+  } = useCart();
   const [adding, setAdding] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -70,6 +77,7 @@ export const ProductCard = ({
 
   const inCart = isInCart(product.id);
   const cartQuantity = getProductQuantityInCart(product.id);
+  const isOutOfStock = product.quantity === 0;
 
   return (
     <div
@@ -87,89 +95,82 @@ export const ProductCard = ({
             imageSizes[size]
           )}
         >
-          {!imageError ? (
+          {!imageError && product.image_path ? (
             <Image
               src={product.image_path}
               alt={product.name}
               fill
               className="object-cover transition-transform group-hover:scale-105"
               onError={() => setImageError(true)}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes={size === "large" ? "400px" : "300px"}
             />
           ) : (
-            <div className="flex h-full items-center justify-center bg-muted">
-              <div className="text-center">
-                <div className="mx-auto mb-2 h-12 w-12 rounded-full bg-muted-foreground/20 flex items-center justify-center">
-                  <Eye className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-muted-foreground">No Image</p>
-              </div>
+            <div className="flex h-full items-center justify-center">
+              <Package className="h-16 w-16 text-muted-foreground" />
             </div>
           )}
 
-          {/* Stock Badge */}
-          {product.quantity === 0 && (
-            <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
-              Out of Stock
-            </div>
-          )}
+          {/* Badges */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {isOutOfStock && (
+              <Badge variant="destructive" className="text-xs">
+                Out of Stock
+              </Badge>
+            )}
+            {inCart && (
+              <Badge variant="secondary" className="text-xs">
+                In Cart ({cartQuantity})
+              </Badge>
+            )}
+          </div>
 
-          {/* Low Stock Badge */}
-          {product.quantity > 0 && product.quantity <= 5 && (
-            <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-medium">
-              Low Stock
-            </div>
-          )}
-
-          {/* Wishlist Button (Future feature) */}
-          <button className="absolute top-2 right-2 p-2 rounded-full bg-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white">
-            <Heart className="h-4 w-4" />
-          </button>
+          {/* Quick Actions */}
+          <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button size="sm" variant="secondary" className="p-2">
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="p-4">
           {/* Brand */}
-          <p className="text-sm text-muted-foreground font-medium mb-1">
-            {product.brand}
-          </p>
+          <p className="text-sm text-muted-foreground mb-1">{product.brand}</p>
 
-          {/* Name */}
+          {/* Title */}
           <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
             {product.name}
           </h3>
 
           {/* Rating */}
-          <div className="mb-3">{renderStars(product.rating)}</div>
+          <div className="mb-2">{renderStars(product.rating)}</div>
 
           {/* Price */}
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-primary">
+            <div>
+              <p className="text-2xl font-bold text-primary">
                 ${product.sell_price}
-              </span>
-              {product.cost_price !== product.sell_price && (
-                <span className="text-sm text-muted-foreground line-through">
+              </p>
+              {product.cost_price && (
+                <p className="text-sm text-muted-foreground line-through">
                   ${product.cost_price}
-                </span>
+                </p>
               )}
             </div>
-
-            {/* Stock Status */}
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">
-                {product.quantity > 0 ? (
-                  <>
-                    <span className="text-green-600 font-medium">In Stock</span>
-                    <br />
-                    <span className="text-xs">
-                      ({product.quantity} available)
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-red-600 font-medium">Out of Stock</span>
+            <div className="text-right text-sm">
+              <p
+                className={cn(
+                  "font-medium",
+                  isOutOfStock ? "text-red-600" : "text-green-600"
                 )}
+              >
+                {isOutOfStock ? "Out of Stock" : "In Stock"}
               </p>
+              {!isOutOfStock && (
+                <p className="text-muted-foreground">
+                  {product.quantity} available
+                </p>
+              )}
             </div>
           </div>
 
@@ -184,11 +185,11 @@ export const ProductCard = ({
 
       {/* Action Buttons */}
       {showAddToCart && isCustomer() && (
-        <div className="absolute bottom-4 left-4 right-4">
-          {product.quantity > 0 ? (
+        <div className="px-2 pb-4">
+          {!isOutOfStock ? (
             <Button
               onClick={handleAddToCart}
-              disabled={adding}
+              disabled={adding || cartLoading}
               size="sm"
               className="w-full"
               variant={inCart ? "outline" : "default"}
@@ -217,23 +218,34 @@ export const ProductCard = ({
           )}
         </div>
       )}
-
-      {/* Quick View Button (Future feature) */}
-      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button size="sm" variant="outline" className="p-2">
-          <Eye className="h-4 w-4" />
-        </Button>
-      </div>
     </div>
   );
 };
 
 // Compact version for lists
-export const ProductCardCompact = ({ product, className = "" }) => (
-  <ProductCard product={product} size="compact" className={className} />
+export const ProductCardCompact = ({
+  product,
+  className = "",
+  showAddToCart = true,
+}) => (
+  <ProductCard
+    product={product}
+    size="compact"
+    className={className}
+    showAddToCart={showAddToCart}
+  />
 );
 
 // Large version for featured products
-export const ProductCardLarge = ({ product, className = "" }) => (
-  <ProductCard product={product} size="large" className={className} />
+export const ProductCardLarge = ({
+  product,
+  className = "",
+  showAddToCart = true,
+}) => (
+  <ProductCard
+    product={product}
+    size="large"
+    className={className}
+    showAddToCart={showAddToCart}
+  />
 );

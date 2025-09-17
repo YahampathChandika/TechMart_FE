@@ -4,47 +4,28 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Minus, Plus, Trash2, Heart, Star } from "lucide-react";
+import { Minus, Plus, Trash2, Heart, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/hooks";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { useCart } from "@/contexts/CartContext";
 import { InlineLoadingSpinner } from "@/components/common";
-import { useConfirmDialog, DeleteConfirmDialog } from "@/components/common";
 
-export const CartItem = ({
-  cartItem,
-  className = "",
-  showRemoveButton = true,
-  showMoveToWishlist = true,
-}) => {
-  const { updateQuantity, removeFromCart } = useCart();
+export const CartItem = ({ item }) => {
+  const { updateCartItem, removeFromCart, loading } = useCart();
   const [updating, setUpdating] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const {
-    isOpen: showDeleteConfirm,
-    loading: removing,
-    openDialog,
-    closeDialog,
-    confirmAction,
-  } = useConfirmDialog();
-
-  const { product, quantity } = cartItem;
-
-  if (!product) {
-    return null; // Product not found or deleted
-  }
+  const product = item.product;
+  const isOutOfStock = product?.quantity === 0;
+  const exceedsStock = item.quantity > (product?.quantity || 0);
 
   const handleQuantityChange = async (newQuantity) => {
-    if (newQuantity === quantity || updating) return;
+    if (newQuantity < 1) return;
 
     setUpdating(true);
     try {
-      if (newQuantity <= 0) {
-        await handleRemove();
-      } else {
-        await updateQuantity(product.id, newQuantity);
-      }
+      await updateCartItem(item.id, newQuantity);
     } catch (error) {
       console.error("Failed to update quantity:", error);
     } finally {
@@ -53,253 +34,219 @@ export const CartItem = ({
   };
 
   const handleRemove = async () => {
+    setRemoving(true);
     try {
-      removeFromCart(product.id);
+      await removeFromCart(item.id);
     } catch (error) {
       console.error("Failed to remove item:", error);
+    } finally {
+      setRemoving(false);
     }
   };
 
-  const handleRemoveClick = () => {
-    openDialog(handleRemove);
-  };
-
-  const itemTotal = product.sell_price * quantity;
-  const isOutOfStock = product.quantity === 0;
-  const exceedsStock = quantity > product.quantity;
-
-  const renderStars = (rating) => {
+  if (!product) {
     return (
-      <div className="flex items-center">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={cn(
-              "h-3 w-3",
-              star <= rating
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-gray-300"
-            )}
-          />
-        ))}
+      <div className="flex items-center justify-between p-4 border rounded-lg bg-muted">
+        <p className="text-muted-foreground">Product not found</p>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRemove}
+          disabled={removing}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
     );
-  };
+  }
 
   return (
-    <>
-      <div
-        className={cn(
-          "flex flex-col sm:flex-row gap-4 p-4 border rounded-lg",
-          (isOutOfStock || exceedsStock) &&
-            "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800",
-          className
-        )}
-      >
-        {/* Product Image */}
-        <div className="w-full sm:w-24 h-24 flex-shrink-0">
-          <Link href={`/products/${product.id}`}>
-            <div className="relative w-full h-full overflow-hidden rounded-md bg-muted border">
-              {!imageError ? (
-                <Image
-                  src={product.image_path}
-                  alt={product.name}
-                  fill
-                  className="object-cover hover:scale-105 transition-transform"
-                  onError={() => setImageError(true)}
-                  sizes="96px"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <div className="text-center">
-                    <div className="mx-auto mb-1 h-6 w-6 rounded-full bg-muted-foreground/20 flex items-center justify-center">
-                      <Star className="h-3 w-3 text-muted-foreground" />
-                    </div>
-                    <p className="text-xs text-muted-foreground">No Image</p>
-                  </div>
-                </div>
+    <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-card">
+      {/* Product Image */}
+      <div className="w-full sm:w-32 h-32 flex-shrink-0">
+        <div className="relative w-full h-full rounded-lg overflow-hidden bg-muted">
+          {!imageError && product.image_path ? (
+            <Image
+              src={product.image_path}
+              alt={product.name}
+              fill
+              className="object-cover"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="flex items-center justify-center w-full h-full">
+              <Package className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Product Details */}
+      <div className="flex-1">
+        <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
+          <div className="flex-1">
+            <Link href={`/products/${product.id}`}>
+              <h3 className="font-semibold text-lg hover:text-primary transition-colors">
+                {product.name}
+              </h3>
+            </Link>
+            <p className="text-muted-foreground mb-2">{product.brand}</p>
+
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl font-bold text-primary">
+                ${parseFloat(product.sell_price).toFixed(2)}
+              </span>
+              {product.cost_price && (
+                <span className="text-sm text-muted-foreground line-through">
+                  ${parseFloat(product.cost_price).toFixed(2)}
+                </span>
               )}
             </div>
-          </Link>
-        </div>
 
-        {/* Product Details */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
-            {/* Product Info */}
-            <div className="flex-1 min-w-0">
-              <Link href={`/products/${product.id}`}>
-                <p className="text-sm text-muted-foreground">{product.brand}</p>
-                <h3 className="font-semibold text-lg hover:text-primary transition-colors line-clamp-2">
-                  {product.name}
-                </h3>
-              </Link>
-
-              <div className="flex items-center gap-2 mt-1">
-                {renderStars(product.rating)}
-                <span className="text-xs text-muted-foreground">
-                  ({product.rating})
-                </span>
-              </div>
-
-              {/* Stock Status */}
-              <div className="mt-2">
-                {isOutOfStock ? (
-                  <p className="text-sm text-red-600 font-medium">
-                    Out of Stock
-                  </p>
-                ) : exceedsStock ? (
-                  <p className="text-sm text-red-600 font-medium">
-                    Only {product.quantity} available
-                  </p>
-                ) : product.quantity <= 5 ? (
-                  <p className="text-sm text-orange-600">
-                    Only {product.quantity} left in stock
-                  </p>
-                ) : (
-                  <p className="text-sm text-green-600">In Stock</p>
-                )}
-              </div>
+            {/* Stock Status */}
+            <div className="flex items-center gap-2 mb-4">
+              {isOutOfStock ? (
+                <Badge variant="destructive">Out of Stock</Badge>
+              ) : exceedsStock ? (
+                <Badge variant="destructive">Exceeds Available Stock</Badge>
+              ) : product.quantity <= 10 ? (
+                <Badge variant="secondary">
+                  Low Stock ({product.quantity} left)
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-green-600">
+                  In Stock ({product.quantity} available)
+                </Badge>
+              )}
             </div>
 
-            {/* Price and Controls */}
-            <div className="flex flex-col sm:items-end gap-3">
-              {/* Price */}
-              <div className="text-right">
-                <p className="text-lg font-bold text-primary">
-                  ${itemTotal.toFixed(2)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  ${product.sell_price} each
-                </p>
+            {/* Quantity Controls */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center border rounded-md">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleQuantityChange(item.quantity - 1)}
+                  disabled={item.quantity <= 1 || updating || loading}
+                  className="h-8 w-8 p-0"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+
+                <div className="px-3 py-1 min-w-[3rem] text-center">
+                  {updating ? (
+                    <InlineLoadingSpinner className="h-4 w-4" />
+                  ) : (
+                    item.quantity
+                  )}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleQuantityChange(item.quantity + 1)}
+                  disabled={
+                    item.quantity >= (product.quantity || 0) ||
+                    updating ||
+                    loading
+                  }
+                  className="h-8 w-8 p-0"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
 
-              {/* Quantity Controls */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center border rounded-md">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    disabled={updating || quantity <= 1}
-                    className="p-2 h-8 w-8"
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-
-                  <div className="flex items-center justify-center min-w-[2.5rem] px-2 text-sm font-medium">
-                    {updating ? <InlineLoadingSpinner /> : quantity}
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    disabled={updating || quantity >= product.quantity}
-                    className="p-2 h-8 w-8"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-1">
-                  {showMoveToWishlist && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="p-2 h-8 w-8"
-                      title="Move to Wishlist"
-                    >
-                      <Heart className="h-3 w-3" />
-                    </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemove}
+                  disabled={removing || loading}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  {removing ? (
+                    <InlineLoadingSpinner className="h-4 w-4" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
                   )}
+                </Button>
 
-                  {showRemoveButton && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRemoveClick}
-                      disabled={removing}
-                      className="p-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      title="Remove from Cart"
-                    >
-                      {removing ? (
-                        <InlineLoadingSpinner />
-                      ) : (
-                        <Trash2 className="h-3 w-3" />
-                      )}
-                    </Button>
-                  )}
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Heart className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
 
-          {/* Warning Messages */}
-          {exceedsStock && (
-            <div className="mt-3 p-2 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-700 dark:text-red-300">
-              <p>
-                <strong>Stock limit exceeded:</strong> Only {product.quantity}{" "}
-                available. Quantity will be adjusted during checkout.
-              </p>
-            </div>
-          )}
-
-          {isOutOfStock && (
-            <div className="mt-3 p-2 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-700 dark:text-red-300">
-              <p>
-                <strong>Item unavailable:</strong> This product is currently out
-                of stock. Remove from cart or check back later.
-              </p>
-            </div>
-          )}
+          {/* Item Total */}
+          <div className="text-right">
+            <p className="text-lg font-semibold">
+              ${(parseFloat(product.sell_price) * item.quantity).toFixed(2)}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              ${parseFloat(product.sell_price).toFixed(2)} each
+            </p>
+          </div>
         </div>
       </div>
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmDialog
-        isOpen={showDeleteConfirm}
-        onClose={closeDialog}
-        onConfirm={confirmAction}
-        loading={removing}
-        itemName={product.name}
-        itemType="item from cart"
-      />
-    </>
+    </div>
   );
 };
 
-// Compact version for mini cart or checkout summary
-export const CartItemCompact = ({ cartItem, className = "" }) => {
-  const { product, quantity } = cartItem;
+// Compact version for mini cart
+export const CartItemCompact = ({ item, onClose }) => {
+  const { updateCartItem, removeFromCart } = useCart();
+  const product = item.product;
+
+  const handleQuantityChange = async (newQuantity) => {
+    if (newQuantity < 1) {
+      await removeFromCart(item.id);
+    } else {
+      await updateCartItem(item.id, newQuantity);
+    }
+    onClose?.();
+  };
 
   if (!product) return null;
 
-  const itemTotal = product.sell_price * quantity;
-
   return (
-    <div className={cn("flex items-center gap-3 py-2", className)}>
-      <div className="w-12 h-12 flex-shrink-0">
-        <div className="relative w-full h-full overflow-hidden rounded bg-muted border">
-          <Image
-            src={product.image_path}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="48px"
-          />
-        </div>
+    <div className="flex items-center gap-3 p-3 border-b">
+      <div className="w-12 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0">
+        <Package className="h-6 w-6 text-muted-foreground" />
       </div>
 
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-sm line-clamp-1">{product.name}</h4>
+        <h4 className="font-medium truncate text-sm">{product.name}</h4>
         <p className="text-xs text-muted-foreground">{product.brand}</p>
-        <p className="text-xs text-muted-foreground">Qty: {quantity}</p>
-      </div>
-
-      <div className="text-right">
-        <p className="font-medium text-sm">${itemTotal.toFixed(2)}</p>
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-sm font-medium">
+            ${parseFloat(product.sell_price).toFixed(2)}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleQuantityChange(item.quantity - 1)}
+              className="h-5 w-5 p-0"
+            >
+              <Minus className="h-3 w-3" />
+            </Button>
+            <span className="text-xs w-6 text-center">{item.quantity}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleQuantityChange(item.quantity + 1)}
+              className="h-5 w-5 p-0"
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

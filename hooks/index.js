@@ -6,6 +6,7 @@ import { useState } from "react";
 export { useAuth } from "@/contexts/AuthContext";
 export { useCart } from "@/contexts/CartContext";
 export { useTheme, useNextTheme } from "@/contexts/ThemeContext";
+export { useProducts, useProduct, useProductSearch } from "./useProducts";
 
 // Custom hook for localStorage management
 export const useLocalStorage = (key, initialValue) => {
