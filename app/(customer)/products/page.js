@@ -9,7 +9,8 @@ import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, X } from "lucide-react";
-import { useProducts, useProductSearch } from "@/hooks/useProducts";
+import { useProducts } from "@/hooks/useProducts";
+import { useBrands, useFilterOptions } from "@/hooks/useBrands";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
@@ -27,15 +28,20 @@ export default function ProductsPage() {
     per_page: 12,
   });
 
+  // Fetch brands and filter options separately
+  const { brands, loading: brandsLoading } = useBrands();
+  const { filterOptions, loading: filtersLoading } = useFilterOptions();
+
   // Use products hook with current filters
-  const {
-    products,
-    loading,
-    error,
-    meta,
-    filters: availableFilters,
-    refresh,
-  } = useProducts(filters);
+  const { products, loading, error, meta, refresh } = useProducts(filters);
+
+  // Prepare available filters for SearchFilters component
+  const availableFilters = {
+    brands: brands || [],
+    price_range: filterOptions?.price_range || { min: 0, max: 1000 },
+    rating_range: filterOptions?.rating_range || { min: 1, max: 5 },
+    categories: filterOptions?.categories || [],
+  };
 
   // Handle search
   const handleSearch = useCallback(
@@ -131,11 +137,17 @@ export default function ProductsPage() {
                 </Button>
               )}
             </div>
-            <SearchFilters
-              filters={filters}
-              availableFilters={availableFilters}
-              onChange={handleFilterChange}
-            />
+            {brandsLoading || filtersLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : (
+              <SearchFilters
+                filters={filters}
+                availableFilters={availableFilters}
+                onChange={handleFilterChange}
+              />
+            )}
           </div>
         </div>
 
@@ -196,11 +208,17 @@ export default function ProductsPage() {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              <SearchFilters
-                filters={filters}
-                availableFilters={availableFilters}
-                onChange={handleFilterChange}
-              />
+              {brandsLoading || filtersLoading ? (
+                <div className="flex justify-center py-4">
+                  <LoadingSpinner />
+                </div>
+              ) : (
+                <SearchFilters
+                  filters={filters}
+                  availableFilters={availableFilters}
+                  onChange={handleFilterChange}
+                />
+              )}
             </div>
           )}
 

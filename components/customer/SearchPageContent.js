@@ -7,11 +7,9 @@ import { Search, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductGrid } from "@/components/customer/ProductGrid";
 import { SearchFilters } from "@/components/customer/SearchFilters";
-import {
-  getActiveProducts,
-  searchProducts,
-  getUniqueBrands,
-} from "@/lib/mockData";
+import { LoadingSpinner, ErrorMessage } from "@/components/common";
+import { useProducts } from "@/hooks/useProducts";
+import { useBrands, useFilterOptions } from "@/hooks/useBrands";
 
 export function SearchPageContent() {
   const searchParams = useSearchParams();
@@ -20,13 +18,34 @@ export function SearchPageContent() {
 
   const [filters, setFilters] = useState({
     search: initialQuery,
-    brands: initialCategory ? [initialCategory] : [],
-    priceRange: null,
-    minRating: null,
-    inStock: false,
+    brand: initialCategory || "",
+    min_price: "",
+    max_price: "",
+    rating: "",
+    in_stock: false,
   });
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+
+  // Fetch brands and filter options
+  const { brands, loading: brandsLoading } = useBrands();
+  const { filterOptions, loading: filtersLoading } = useFilterOptions();
+
+  // Fetch products with current filters
+  const {
+    products: filteredProducts,
+    loading: productsLoading,
+    error: productsError,
+    meta,
+    refresh,
+  } = useProducts(filters);
+
+  // Get trending products (highest rated products)
+  const { products: trendingProducts, loading: trendingLoading } = useProducts({
+    rating: 4,
+    sort: "-rating",
+    per_page: 3,
+  });
 
   // Popular search terms
   const popularSearches = [
@@ -38,52 +57,13 @@ export function SearchPageContent() {
     "Laptop",
   ];
 
-  // Trending products (highest rated recent products)
-  const trendingProducts = getActiveProducts()
-    .filter((product) => product.rating >= 4)
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 3);
-
-  // Filter products based on current filters
-  const filteredProducts = useMemo(() => {
-    let products = getActiveProducts();
-
-    // Apply search filter
-    if (filters.search) {
-      products = searchProducts(filters.search);
-    }
-
-    // Apply brand filter
-    if (filters.brands.length > 0) {
-      products = products.filter((product) =>
-        filters.brands.includes(product.brand)
-      );
-    }
-
-    // Apply price range filter
-    if (filters.priceRange) {
-      const { min, max } = filters.priceRange;
-      products = products.filter(
-        (product) =>
-          product.sell_price >= min &&
-          (max === Infinity || product.sell_price <= max)
-      );
-    }
-
-    // Apply rating filter
-    if (filters.minRating) {
-      products = products.filter(
-        (product) => product.rating >= filters.minRating
-      );
-    }
-
-    // Apply stock filter
-    if (filters.inStock) {
-      products = products.filter((product) => product.quantity > 0);
-    }
-
-    return products;
-  }, [filters]);
+  // Prepare available filters for SearchFilters component
+  const availableFilters = {
+    brands: brands || [],
+    price_range: filterOptions?.price_range || { min: 0, max: 1000 },
+    rating_range: filterOptions?.rating_range || { min: 1, max: 5 },
+    categories: filterOptions?.categories || [],
+  };
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
@@ -111,10 +91,11 @@ export function SearchPageContent() {
 
   const hasSearchQuery =
     filters.search ||
-    filters.brands.length > 0 ||
-    filters.priceRange ||
-    filters.minRating ||
-    filters.inStock;
+    filters.brand ||
+    filters.min_price ||
+    filters.max_price ||
+    filters.rating ||
+    filters.in_stock;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -140,7 +121,12 @@ export function SearchPageContent() {
               className="w-full h-12 pl-10 pr-4 text-lg border border-input rounded-md bg-background"
             />
           </div>
-          <Button type="submit" size="lg" className="px-8">
+          <Button
+            type="submit"
+            size="lg"
+            className="px-8"
+            disabled={productsLoading}
+          >
             Search
           </Button>
         </form>
@@ -172,53 +158,71 @@ export function SearchPageContent() {
           {/* Browse by Brand */}
           <section>
             <h2 className="text-xl font-semibold mb-4">Browse by Brand</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {getUniqueBrands().map((brand) => (
-                <Button
-                  key={brand}
-                  variant="outline"
-                  onClick={() =>
-                    setFilters((prev) => ({ ...prev, brands: [brand] }))
-                  }
-                  className="h-16 text-sm"
-                >
-                  {brand}
-                </Button>
-              ))}
-            </div>
+            {brandsLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : brands && brands.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {brands.map((brand) => (
+                  <Button
+                    key={brand}
+                    variant="outline"
+                    onClick={() =>
+                      setFilters((prev) => ({ ...prev, brand: brand }))
+                    }
+                    className="h-16 text-sm"
+                  >
+                    {brand}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No brands available</p>
+            )}
           </section>
 
           {/* Trending Products */}
           <section>
             <h2 className="text-xl font-semibold mb-6">Trending Now</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {trendingProducts.map((product) => (
-                <div key={product.id} className="group relative">
-                  <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
-                      Trending
+            {trendingLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : trendingProducts && trendingProducts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {trendingProducts.map((product) => (
+                  <div key={product.id} className="group relative">
+                    <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
+                        Trending
+                      </div>
+                      <div className="text-center p-4">
+                        <h3 className="font-semibold mb-2">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {product.brand}
+                        </p>
+                        <p className="text-lg font-bold text-primary">
+                          ${product.sell_price}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-center p-4">
-                      <h3 className="font-semibold mb-2">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {product.brand}
-                      </p>
-                      <p className="text-lg font-bold text-primary">
-                        ${product.sell_price}
-                      </p>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePopularSearch(product.name)}
+                      className="w-full"
+                    >
+                      Search Similar
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePopularSearch(product.name)}
-                    className="w-full"
-                  >
-                    Search Similar
-                  </Button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                No trending products available
+              </p>
+            )}
           </section>
         </div>
       ) : (
@@ -226,13 +230,20 @@ export function SearchPageContent() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
           <aside className="lg:w-80 flex-shrink-0">
-            <SearchFilters
-              onFiltersChange={handleFiltersChange}
-              initialFilters={filters}
-              isOpen={showFilters}
-              onToggle={toggleFilters}
-              className="sticky top-4"
-            />
+            <div className="sticky top-4">
+              {brandsLoading || filtersLoading ? (
+                <div className="flex justify-center py-8">
+                  <LoadingSpinner />
+                </div>
+              ) : (
+                <SearchFilters
+                  filters={filters}
+                  availableFilters={availableFilters}
+                  onChange={handleFiltersChange}
+                  className="sticky top-4"
+                />
+              )}
+            </div>
           </aside>
 
           {/* Search Results */}
@@ -248,19 +259,36 @@ export function SearchPageContent() {
                 )}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {filteredProducts.length} products found
+                {productsLoading
+                  ? "Loading products..."
+                  : `${
+                      meta?.total || filteredProducts?.length || 0
+                    } products found`}
               </p>
             </div>
 
-            <ProductGrid
-              products={filteredProducts}
-              loading={false}
-              error={null}
-              showFilters={true}
-              showSorting={true}
-              showViewToggle={true}
-              onFilterToggle={toggleFilters}
-            />
+            {/* Products Display */}
+            {productsError ? (
+              <ErrorMessage
+                title="Failed to load products"
+                message={productsError}
+                variant="destructive"
+                action={{
+                  label: "Try Again",
+                  onClick: refresh,
+                }}
+              />
+            ) : (
+              <ProductGrid
+                products={filteredProducts}
+                loading={productsLoading}
+                error={productsError}
+                showFilters={true}
+                showSorting={true}
+                showViewToggle={true}
+                onFilterToggle={toggleFilters}
+              />
+            )}
           </main>
         </div>
       )}
