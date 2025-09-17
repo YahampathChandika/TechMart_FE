@@ -6,31 +6,33 @@ import { notFound } from "next/navigation";
 import { ProductDetails } from "@/components/customer/ProductDetails";
 import { SimpleProductGrid } from "@/components/customer/ProductGrid";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
-import { useProduct, useProducts } from "@/hooks/useProducts";
+import { useProduct, usePublicProducts } from "@/hooks/useProducts"; // FIXED: Added usePublicProducts import
 
 export default function ProductDetailPage({ params }) {
   const { id } = use(params);
 
-  // Get the main product
+  // FIXED: Get the main product using public endpoint
   const {
     product,
     loading: productLoading,
     error: productError,
-  } = useProduct(id);
+  } = useProduct(id, false); // FIXED: Added false parameter for public endpoint
 
-  // Get related products (same brand, different product)
-  const { products: relatedProducts, loading: relatedLoading } = useProducts({
-    brand: product?.brand,
-    exclude: id,
-    per_page: 4,
-  });
+  // FIXED: Get related products using public endpoint
+  const { products: relatedProducts, loading: relatedLoading } =
+    usePublicProducts({
+      brand: product?.brand,
+      exclude: id,
+      per_page: 4,
+    });
 
   // Get suggested products (similar price range)
   const priceMin = product ? product.sell_price * 0.8 : 0;
   const priceMax = product ? product.sell_price * 1.2 : 0;
 
+  // FIXED: Get suggested products using public endpoint
   const { products: suggestedProducts, loading: suggestedLoading } =
-    useProducts({
+    usePublicProducts({
       min_price: priceMin,
       max_price: priceMax,
       exclude: id,

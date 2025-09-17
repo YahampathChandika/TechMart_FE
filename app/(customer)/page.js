@@ -7,28 +7,28 @@ import { Button } from "@/components/ui/button";
 import { FeaturedProductGrid } from "@/components/customer/ProductGrid";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
-import { useProducts } from "@/hooks/useProducts";
+import { usePublicProducts } from "@/hooks/useProducts"; // FIXED: Use public products hook
 
 export default function CustomerHomepage() {
   const { isCustomer, customer } = useAuth();
 
-  // Get featured products (highest rated and in stock)
+  // FIXED: Get featured products using public endpoint
   const {
     products: featuredProducts,
     loading: featuredLoading,
     error: featuredError,
-  } = useProducts({
+  } = usePublicProducts({
     rating: 4,
     in_stock: true,
     per_page: 6,
   });
 
-  // Get new arrivals
+  // FIXED: Get new arrivals using public endpoint
   const {
     products: newArrivals,
     loading: newLoading,
     error: newError,
-  } = useProducts({
+  } = usePublicProducts({
     sort: "newest",
     per_page: 3,
   });

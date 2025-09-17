@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ProductGrid } from "@/components/customer/ProductGrid";
 import { SearchFilters } from "@/components/customer/SearchFilters";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
-import { useProducts } from "@/hooks/useProducts";
+import { usePublicProducts } from "@/hooks/useProducts"; // FIXED: Changed to usePublicProducts
 import { useBrands, useFilterOptions } from "@/hooks/useBrands";
 
 export function SearchPageContent() {
@@ -31,21 +31,22 @@ export function SearchPageContent() {
   const { brands, loading: brandsLoading } = useBrands();
   const { filterOptions, loading: filtersLoading } = useFilterOptions();
 
-  // Fetch products with current filters
+  // FIXED: Fetch products with current filters using public endpoint
   const {
     products: filteredProducts,
     loading: productsLoading,
     error: productsError,
     meta,
     refresh,
-  } = useProducts(filters);
+  } = usePublicProducts(filters);
 
-  // Get trending products (highest rated products)
-  const { products: trendingProducts, loading: trendingLoading } = useProducts({
-    rating: 4,
-    sort: "-rating",
-    per_page: 3,
-  });
+  // FIXED: Get trending products using public endpoint
+  const { products: trendingProducts, loading: trendingLoading } =
+    usePublicProducts({
+      rating: 4,
+      sort: "-rating",
+      per_page: 3,
+    });
 
   // Popular search terms
   const popularSearches = [

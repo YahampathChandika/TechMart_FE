@@ -9,7 +9,7 @@ import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, X } from "lucide-react";
-import { useProducts } from "@/hooks/useProducts";
+import { usePublicProducts } from "@/hooks/useProducts";
 import { useBrands, useFilterOptions } from "@/hooks/useBrands";
 
 export default function ProductsPage() {
@@ -33,7 +33,7 @@ export default function ProductsPage() {
   const { filterOptions, loading: filtersLoading } = useFilterOptions();
 
   // Use products hook with current filters
-  const { products, loading, error, meta, refresh } = useProducts(filters);
+  const { products, loading, error, meta, refresh } = usePublicProducts(filters);
 
   // Prepare available filters for SearchFilters component
   const availableFilters = {

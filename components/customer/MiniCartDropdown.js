@@ -15,12 +15,9 @@ export const MiniCartDropdown = ({ onClose, className = "" }) => {
 
   if (items.length === 0) {
     return (
-      <div className={cn("p-4 text-center", className)}>
+      <div className={cn("p-4 w-60 text-center bg-background backdrop-blur rounded-lg", className)}>
         <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
         <p className="text-muted-foreground mb-4">Your cart is empty</p>
-        <Button asChild variant="outline" onClick={onClose}>
-          <Link href="/products">Continue Shopping</Link>
-        </Button>
       </div>
     );
   }

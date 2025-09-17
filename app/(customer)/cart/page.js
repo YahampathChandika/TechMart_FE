@@ -10,7 +10,7 @@ import { CustomerGuard } from "@/components/auth/AuthGuard";
 import { SimpleProductGrid } from "@/components/customer/ProductGrid";
 import { useCart } from "@/contexts/CartContext";
 import { useConfirmDialog, DeleteConfirmDialog } from "@/components/common";
-import { useProducts } from "@/hooks/useProducts";
+import { usePublicProducts } from "@/hooks/useProducts"; // FIXED: Changed to usePublicProducts
 
 function CartPageContent() {
   const { cartItems, clearCart, cartTotals } = useCart();
@@ -23,8 +23,8 @@ function CartPageContent() {
     confirmAction,
   } = useConfirmDialog();
 
-  // Get recommended products
-  const { products: recommendedProducts } = useProducts({
+  // FIXED: Get recommended products using public endpoint
+  const { products: recommendedProducts } = usePublicProducts({
     rating: 4,
     in_stock: true,
     per_page: 4,
