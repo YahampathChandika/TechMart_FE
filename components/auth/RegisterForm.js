@@ -4,16 +4,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { Eye, EyeOff, UserPlus, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   ErrorMessage,
   FormFieldError,
   InlineLoadingSpinner,
 } from "@/components/common";
-import { validation } from "@/lib/auth";
+import { useAuth } from "@/hooks";
+import { VALIDATION_RULES } from "@/lib/constants";
+import { handleValidationErrors } from "@/lib/formErrorUtils";
 import { cn } from "@/lib/utils";
-import { mockCustomers } from "@/lib/mockData";
 
 export const RegisterForm = ({ className = "", onSuccess = null }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +23,7 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const { registerCustomer } = useAuth();
   const router = useRouter();
 
   const {
@@ -30,6 +32,7 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
     watch,
     formState: { errors },
     setError: setFieldError,
+    clearErrors,
   } = useForm({
     defaultValues: {
       first_name: "",
@@ -46,49 +49,31 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
   const onSubmit = async (data) => {
     setLoading(true);
     setError("");
+    clearErrors();
 
     try {
-      // Check if email already exists in mock data
-      const existingCustomer = mockCustomers.find(
-        (customer) => customer.email.toLowerCase() === data.email.toLowerCase()
-      );
-
-      if (existingCustomer) {
-        setError("An account with this email already exists.");
-        setLoading(false);
-        return;
-      }
-
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // In a real app, this would be an API call
-      const newCustomer = {
-        id: mockCustomers.length + 1,
+      const result = await registerCustomer({
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
         contact: data.contact,
-        password: data.password, // In real app, this would be hashed
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+        password: data.password,
+      });
 
-      // Add to mock data (in real app, this would be handled by the API)
-      mockCustomers.push(newCustomer);
+      if (result.success) {
+        setSuccess(true);
 
-      setSuccess(true);
-
-      if (onSuccess) {
-        onSuccess(newCustomer);
+        if (onSuccess) {
+          onSuccess(result.data);
+        } else {
+          // Auto-redirect after successful registration
+          setTimeout(() => {
+            router.push("/");
+          }, 2000);
+        }
       } else {
-        // Redirect to login after short delay
-        setTimeout(() => {
-          router.push(
-            "/login?message=Registration successful! Please sign in."
-          );
-        }, 2000);
+        // Use utility function to handle validation errors
+        handleValidationErrors(result, setFieldError, setError);
       }
     } catch (err) {
       console.error("Registration error:", err);
@@ -101,20 +86,17 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
   if (success) {
     return (
       <div className={cn("w-full max-w-md mx-auto text-center", className)}>
-        <div className="p-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-          <div className="w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
-            <UserPlus className="h-6 w-6 text-green-600 dark:text-green-400" />
-          </div>
-          <h2 className="text-xl font-semibold text-green-900 dark:text-green-100 mb-2">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-8">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-green-800 dark:text-green-200 mb-2">
             Registration Successful!
           </h2>
-          <p className="text-sm text-green-700 dark:text-green-300 mb-4">
-            Your account has been created successfully. Redirecting to login
-            page...
+          <p className="text-green-700 dark:text-green-300 mb-4">
+            Your account has been created and you're now logged in.
           </p>
-          <div className="flex justify-center">
-            <InlineLoadingSpinner className="text-green-600" />
-          </div>
+          <p className="text-sm text-green-600 dark:text-green-400">
+            Redirecting to home page...
+          </p>
         </div>
       </div>
     );
@@ -123,26 +105,22 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
   return (
     <div className={cn("w-full max-w-md mx-auto", className)}>
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold">Create Account</h1>
+        <h1 className="text-2xl font-bold">Create Your Account</h1>
         <p className="text-muted-foreground mt-2">
-          Join TechMart to start shopping for amazing electronics
+          Join TechMart and start shopping for the latest tech products
         </p>
       </div>
 
-      {error && (
-        <ErrorMessage
-          title="Registration Failed"
-          message={error}
-          className="mb-6"
-          onDismiss={() => setError("")}
-        />
-      )}
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {error && <ErrorMessage message={error} />}
+
         {/* Name Fields */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="first_name" className="text-sm font-medium">
+          <div>
+            <label
+              htmlFor="first_name"
+              className="block text-sm font-medium mb-2"
+            >
               First Name
             </label>
             <input
@@ -154,26 +132,22 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
                 },
                 maxLength: {
                   value: 50,
-                  message: "First name cannot exceed 50 characters",
+                  message: "First name must not exceed 50 characters",
                 },
               })}
               type="text"
               id="first_name"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="John"
-              className={cn(
-                "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                "disabled:cursor-not-allowed disabled:opacity-50",
-                errors.first_name &&
-                  "border-destructive focus-visible:ring-destructive"
-              )}
-              disabled={loading}
             />
-            <FormFieldError message={errors.first_name?.message} />
+            <FormFieldError error={errors.first_name} />
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="last_name" className="text-sm font-medium">
+          <div>
+            <label
+              htmlFor="last_name"
+              className="block text-sm font-medium mb-2"
+            >
               Last Name
             </label>
             <input
@@ -185,81 +159,67 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
                 },
                 maxLength: {
                   value: 50,
-                  message: "Last name cannot exceed 50 characters",
+                  message: "Last name must not exceed 50 characters",
                 },
               })}
               type="text"
               id="last_name"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Doe"
-              className={cn(
-                "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                "disabled:cursor-not-allowed disabled:opacity-50",
-                errors.last_name &&
-                  "border-destructive focus-visible:ring-destructive"
-              )}
-              disabled={loading}
             />
-            <FormFieldError message={errors.last_name?.message} />
+            <FormFieldError error={errors.last_name} />
           </div>
         </div>
 
         {/* Email Field */}
-        <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium mb-2">
             Email Address
           </label>
           <input
             {...register("email", {
               required: "Email is required",
-              validate: (value) =>
-                validation.isValidEmail(value) || "Please enter a valid email",
+              pattern: {
+                value: VALIDATION_RULES.EMAIL,
+                message: "Please enter a valid email address",
+              },
             })}
             type="email"
             id="email"
-            placeholder="john.doe@example.com"
-            className={cn(
-              "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-              "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              errors.email &&
-                "border-destructive focus-visible:ring-destructive"
-            )}
-            disabled={loading}
+            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="john@example.com"
           />
-          <FormFieldError message={errors.email?.message} />
+          <FormFieldError error={errors.email} />
         </div>
 
         {/* Contact Field */}
-        <div className="space-y-2">
-          <label htmlFor="contact" className="text-sm font-medium">
-            Phone Number
+        <div>
+          <label htmlFor="contact" className="block text-sm font-medium mb-2">
+            Contact Number
           </label>
           <input
             {...register("contact", {
-              required: "Phone number is required",
-              validate: (value) =>
-                validation.isValidPhone(value) ||
-                "Please enter a valid phone number",
+              required: "Contact number is required",
+              minLength: {
+                value: 10,
+                message: "Contact number must be at least 10 digits",
+              },
+              maxLength: {
+                value: 15,
+                message: "Contact number must not exceed 15 digits",
+              },
             })}
             type="tel"
             id="contact"
-            placeholder="+1-555-123-4567"
-            className={cn(
-              "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-              "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              errors.contact &&
-                "border-destructive focus-visible:ring-destructive"
-            )}
-            disabled={loading}
+            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="+1234567890"
           />
-          <FormFieldError message={errors.contact?.message} />
+          <FormFieldError error={errors.contact} />
         </div>
 
         {/* Password Field */}
-        <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium">
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium mb-2">
             Password
           </label>
           <div className="relative">
@@ -273,35 +233,30 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
               })}
               type={showPassword ? "text" : "password"}
               id="password"
-              placeholder="Create a secure password"
-              className={cn(
-                "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                "disabled:cursor-not-allowed disabled:opacity-50 pr-10",
-                errors.password &&
-                  "border-destructive focus-visible:ring-destructive"
-              )}
-              disabled={loading}
+              className="w-full px-3 py-2 pr-10 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="••••••••"
             />
             <button
               type="button"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              disabled={loading}
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4" />
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <Eye className="h-4 w-4" />
+                <Eye className="h-4 w-4 text-muted-foreground" />
               )}
             </button>
           </div>
-          <FormFieldError message={errors.password?.message} />
+          <FormFieldError error={errors.password} />
         </div>
 
         {/* Confirm Password Field */}
-        <div className="space-y-2">
-          <label htmlFor="confirm_password" className="text-sm font-medium">
+        <div>
+          <label
+            htmlFor="confirm_password"
+            className="block text-sm font-medium mb-2"
+          >
             Confirm Password
           </label>
           <div className="relative">
@@ -313,59 +268,51 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
               })}
               type={showConfirmPassword ? "text" : "password"}
               id="confirm_password"
-              placeholder="Confirm your password"
-              className={cn(
-                "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                "disabled:cursor-not-allowed disabled:opacity-50 pr-10",
-                errors.confirm_password &&
-                  "border-destructive focus-visible:ring-destructive"
-              )}
-              disabled={loading}
+              className="w-full px-3 py-2 pr-10 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="••••••••"
             />
             <button
               type="button"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              disabled={loading}
             >
               {showConfirmPassword ? (
-                <EyeOff className="h-4 w-4" />
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <Eye className="h-4 w-4" />
+                <Eye className="h-4 w-4 text-muted-foreground" />
               )}
             </button>
           </div>
-          <FormFieldError message={errors.confirm_password?.message} />
+          <FormFieldError error={errors.confirm_password} />
         </div>
 
         {/* Submit Button */}
-        <Button type="submit" className="w-full" disabled={loading}>
+        <Button type="submit" className="w-full" disabled={loading} size="lg">
           {loading ? (
             <>
-              <InlineLoadingSpinner className="mr-2" />
-              Creating account...
+              <InlineLoadingSpinner size="sm" />
+              Creating Account...
             </>
           ) : (
             <>
-              <UserPlus className="h-4 w-4 mr-2" />
+              <UserPlus className="w-4 h-4 mr-2" />
               Create Account
             </>
           )}
         </Button>
       </form>
 
-      {/* Additional Links */}
-      <div className="mt-6 text-center text-sm">
-        <p className="text-muted-foreground">
+      {/* Login Link */}
+      <div className="mt-6 text-center">
+        <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
-          <button
+          <Button
+            variant="link"
+            className="p-0 h-auto font-medium"
             onClick={() => router.push("/login")}
-            className="text-primary hover:underline font-medium"
-            disabled={loading}
           >
             Sign in here
-          </button>
+          </Button>
         </p>
       </div>
     </div>

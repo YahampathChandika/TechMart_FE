@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { Eye, EyeOff, LogIn, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks";
 import {
@@ -12,7 +12,8 @@ import {
   FormFieldError,
   InlineLoadingSpinner,
 } from "@/components/common";
-import { validation } from "@/lib/auth";
+import { VALIDATION_RULES } from "@/lib/constants";
+import { handleValidationErrors } from "@/lib/formErrorUtils";
 import { cn } from "@/lib/utils";
 
 export const LoginForm = ({
@@ -37,6 +38,7 @@ export const LoginForm = ({
     handleSubmit,
     formState: { errors },
     setError: setFieldError,
+    clearErrors,
   } = useForm({
     defaultValues: {
       email: "",
@@ -47,6 +49,7 @@ export const LoginForm = ({
   const onSubmit = async (data) => {
     setLoading(true);
     setError("");
+    clearErrors();
 
     try {
       let result;
@@ -64,7 +67,8 @@ export const LoginForm = ({
           router.push(redirectTo);
         }
       } else {
-        setError(result.message || "Login failed. Please try again.");
+        // Use utility function to handle validation errors
+        handleValidationErrors(result, setFieldError, setError);
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -74,82 +78,54 @@ export const LoginForm = ({
     }
   };
 
-  // Quick login for development (you can remove this in production)
-  const quickLogin = async (email, password) => {
-    setLoading(true);
-    setError("");
-
-    try {
-      let result;
-      if (type === "admin") {
-        result = await loginUser(email, password);
-      } else {
-        result = await loginCustomer(email, password);
-      }
-
-      if (result.success) {
-        router.push(redirectTo);
-      }
-    } catch (err) {
-      setError("Quick login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className={cn("w-full max-w-md mx-auto", className)}>
       <div className="text-center mb-6">
+        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          {type === "admin" ? (
+            <UserCheck className="w-8 h-8 text-primary" />
+          ) : (
+            <LogIn className="w-8 h-8 text-primary" />
+          )}
+        </div>
         <h1 className="text-2xl font-bold">
           {type === "admin" ? "Admin Login" : "Welcome Back"}
         </h1>
         <p className="text-muted-foreground mt-2">
           {type === "admin"
             ? "Sign in to access the admin dashboard"
-            : "Sign in to your account to continue shopping"}
+            : "Sign in to your TechMart account"}
         </p>
       </div>
 
-      {error && (
-        <ErrorMessage
-          title="Login Failed"
-          message={error}
-          className="mb-6"
-          onDismiss={() => setError("")}
-        />
-      )}
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {error && <ErrorMessage message={error} />}
+
         {/* Email Field */}
-        <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium mb-2">
             Email Address
           </label>
           <input
             {...register("email", {
               required: "Email is required",
-              validate: (value) =>
-                validation.isValidEmail(value) || "Please enter a valid email",
+              pattern: {
+                value: VALIDATION_RULES.EMAIL,
+                message: "Please enter a valid email address",
+              },
             })}
             type="email"
             id="email"
+            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Enter your email"
-            className={cn(
-              "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-              "file:border-0 file:bg-transparent file:text-sm file:font-medium",
-              "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              errors.email &&
-                "border-destructive focus-visible:ring-destructive"
-            )}
-            disabled={loading}
+            autoComplete="email"
           />
-          <FormFieldError message={errors.email?.message} />
+          <FormFieldError error={errors.email} />
         </div>
 
         {/* Password Field */}
-        <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium">
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium mb-2">
             Password
           </label>
           <div className="relative">
@@ -163,128 +139,103 @@ export const LoginForm = ({
               })}
               type={showPassword ? "text" : "password"}
               id="password"
+              className="w-full px-3 py-2 pr-10 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Enter your password"
-              className={cn(
-                "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-                "file:border-0 file:bg-transparent file:text-sm file:font-medium",
-                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                "disabled:cursor-not-allowed disabled:opacity-50 pr-10",
-                errors.password &&
-                  "border-destructive focus-visible:ring-destructive"
-              )}
-              disabled={loading}
+              autoComplete="current-password"
             />
             <button
               type="button"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              disabled={loading}
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4" />
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <Eye className="h-4 w-4" />
+                <Eye className="h-4 w-4 text-muted-foreground" />
               )}
             </button>
           </div>
-          <FormFieldError message={errors.password?.message} />
+          <FormFieldError error={errors.password} />
         </div>
 
         {/* Submit Button */}
-        <Button type="submit" className="w-full" disabled={loading}>
+        <Button type="submit" className="w-full" disabled={loading} size="lg">
           {loading ? (
             <>
-              <InlineLoadingSpinner className="mr-2" />
-              Signing in...
+              <InlineLoadingSpinner size="sm" />
+              Signing In...
             </>
           ) : (
             <>
-              <LogIn className="h-4 w-4 mr-2" />
+              <LogIn className="w-4 h-4 mr-2" />
               Sign In
             </>
           )}
         </Button>
       </form>
 
-      {/* Development Quick Login Buttons */}
-      <div className="mt-6 p-4 bg-muted rounded-lg">
-        <p className="text-sm font-medium mb-3 text-center">
-          Quick Login (Development)
-        </p>
-        <div className="space-y-2">
-          {type === "admin" ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => quickLogin("admin@techmart.com", "admin123")}
-                disabled={loading}
-                className="w-full"
-              >
-                Login as Admin
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => quickLogin("sarah@techmart.com", "user123")}
-                disabled={loading}
-                className="w-full"
-              >
-                Login as User
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => quickLogin("alice@example.com", "customer123")}
-              disabled={loading}
-              className="w-full"
-            >
-              Login as Customer
-            </Button>
-          )}
-        </div>
-      </div>
-
       {/* Additional Links */}
-      <div className="mt-6 text-center text-sm">
-        {type === "customer" ? (
-          <>
-            <p className="text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <button
-                onClick={() => router.push("/register")}
-                className="text-primary hover:underline font-medium"
-                disabled={loading}
-              >
-                Sign up here
-              </button>
-            </p>
-            <p className="mt-2 text-muted-foreground">
-              Are you an admin?{" "}
-              <button
+      {type === "customer" && (
+        <div className="mt-6 text-center space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Button
+              variant="link"
+              className="p-0 h-auto font-medium"
+              onClick={() => router.push("/register")}
+            >
+              Sign up here
+            </Button>
+          </p>
+
+          <div className="border-t pt-3">
+            <p className="text-xs text-muted-foreground">
+              Are you an admin or staff member?{" "}
+              <Button
+                variant="link"
+                className="p-0 h-auto text-xs font-medium"
                 onClick={() => router.push("/admin-login")}
-                className="text-primary hover:underline font-medium"
-                disabled={loading}
               >
                 Admin Login
-              </button>
+              </Button>
             </p>
-          </>
-        ) : (
-          <p className="text-muted-foreground">
+          </div>
+        </div>
+      )}
+
+      {type === "admin" && (
+        <div className="mt-6 text-center">
+          <p className="text-sm text-muted-foreground">
             Customer login?{" "}
-            <button
+            <Button
+              variant="link"
+              className="p-0 h-auto font-medium"
               onClick={() => router.push("/login")}
-              className="text-primary hover:underline font-medium"
-              disabled={loading}
             >
-              Customer Login
-            </button>
+              Sign in here
+            </Button>
           </p>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Development Quick Login - Remove in production */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-2 font-medium">
+            Development Mode - Quick Test Accounts:
+          </p>
+          <div className="space-y-1 text-xs text-yellow-700 dark:text-yellow-300">
+            {type === "admin" ? (
+              <>
+                <p>Admin: admin@example.com / password123</p>
+                <p>User: user@example.com / password123</p>
+              </>
+            ) : (
+              <p>Customer: customer@example.com / password123</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

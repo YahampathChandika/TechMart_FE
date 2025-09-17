@@ -177,13 +177,6 @@ export const Footer = ({ className = "" }) => {
               </Link>
             </div>
           </div>
-
-          {/* Development Note */}
-          <div className="mt-4 text-center">
-            <p className="text-xs text-muted-foreground">
-              Built with Next.js 15, Tailwind CSS & shadcn/ui
-            </p>
-          </div>
         </div>
       </div>
     </footer>

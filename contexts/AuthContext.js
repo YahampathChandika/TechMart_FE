@@ -2,12 +2,9 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import {
-  authenticateUser,
-  authenticateCustomer,
-  getUserById,
-  getCustomerById,
-} from "@/lib/mockData";
+import { authAPI } from "@/lib/api";
+import { tokenManager } from "@/lib/auth";
+import { STORAGE_KEYS, USER_ROLES } from "@/lib/constants";
 
 const AuthContext = createContext();
 
@@ -23,125 +20,229 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userType, setUserType] = useState(null); // 'admin', 'user', 'customer', or null
+  const [userType, setUserType] = useState(null);
 
   // Initialize auth state from localStorage on mount
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem("techmart_user");
-      const savedCustomer = localStorage.getItem("techmart_customer");
-      const savedUserType = localStorage.getItem("techmart_user_type");
+    const initializeAuth = async () => {
+      try {
+        const userToken = tokenManager.getUserToken();
+        const customerToken = tokenManager.getCustomerToken();
 
-      if (
-        (savedUser && savedUserType === "admin") ||
-        savedUserType === "user"
-      ) {
-        const userData = JSON.parse(savedUser);
-        // Verify user still exists and is active
-        const currentUser = getUserById(userData.id);
-        if (currentUser && currentUser.is_active) {
-          setUser(currentUser);
-          setUserType(savedUserType);
-        } else {
-          // User no longer exists or is inactive, clear storage
-          localStorage.removeItem("techmart_user");
-          localStorage.removeItem("techmart_user_type");
+        if (userToken) {
+          // Verify user token and get profile
+          const result = await authAPI.getUserProfile();
+          if (result.success && result.data) {
+            const userData = result.data.user;
+            setUser(userData);
+            setUserType(userData.role);
+
+            // Store user data
+            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+            localStorage.setItem(STORAGE_KEYS.USER_TYPE, userData.role);
+          } else {
+            // Token is invalid, clear it
+            tokenManager.clearAllTokens();
+            localStorage.removeItem(STORAGE_KEYS.USER);
+            localStorage.removeItem(STORAGE_KEYS.USER_TYPE);
+          }
+        } else if (customerToken) {
+          // Verify customer token and get profile
+          const result = await authAPI.getCustomerProfile();
+          if (result.success && result.data) {
+            const customerData = result.data.customer;
+            setCustomer(customerData);
+            setUserType(USER_ROLES.CUSTOMER);
+
+            // Store customer data
+            localStorage.setItem(
+              STORAGE_KEYS.CUSTOMER,
+              JSON.stringify(customerData)
+            );
+            localStorage.setItem(STORAGE_KEYS.USER_TYPE, USER_ROLES.CUSTOMER);
+          } else {
+            // Token is invalid, clear it
+            tokenManager.clearAllTokens();
+            localStorage.removeItem(STORAGE_KEYS.CUSTOMER);
+            localStorage.removeItem(STORAGE_KEYS.USER_TYPE);
+          }
         }
+      } catch (error) {
+        console.error("Auth initialization error:", error);
+        // Clear everything on error
+        tokenManager.clearAllTokens();
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        localStorage.removeItem(STORAGE_KEYS.CUSTOMER);
+        localStorage.removeItem(STORAGE_KEYS.USER_TYPE);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (savedCustomer && savedUserType === "customer") {
-        const customerData = JSON.parse(savedCustomer);
-        // Verify customer still exists and is active
-        const currentCustomer = getCustomerById(customerData.id);
-        if (currentCustomer && currentCustomer.is_active) {
-          setCustomer(currentCustomer);
-          setUserType("customer");
-        } else {
-          // Customer no longer exists or is inactive, clear storage
-          localStorage.removeItem("techmart_customer");
-          localStorage.removeItem("techmart_user_type");
-        }
-      }
-    } catch (error) {
-      console.error("Error loading auth state:", error);
-      // Clear potentially corrupted data
-      localStorage.removeItem("techmart_user");
-      localStorage.removeItem("techmart_customer");
-      localStorage.removeItem("techmart_user_type");
-    }
-
-    setLoading(false);
+    initializeAuth();
   }, []);
 
-  // Login function for users (admin/user)
+  // Admin/User login
   const loginUser = async (email, password) => {
     try {
-      const authenticatedUser = authenticateUser(email, password);
+      const result = await authAPI.loginUser(email, password);
 
-      if (authenticatedUser) {
-        setUser(authenticatedUser);
-        setCustomer(null); // Clear customer state
-        setUserType(authenticatedUser.role); // 'admin' or 'user'
+      if (result.success && result.data) {
+        const { user: userData, token } = result.data;
 
-        // Save to localStorage
-        localStorage.setItem(
-          "techmart_user",
-          JSON.stringify(authenticatedUser)
-        );
-        localStorage.setItem("techmart_user_type", authenticatedUser.role);
-        localStorage.removeItem("techmart_customer"); // Clear customer data
+        // Store user data and token
+        setUser(userData);
+        setUserType(userData.role);
+        tokenManager.setUserToken(token);
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+        localStorage.setItem(STORAGE_KEYS.USER_TYPE, userData.role);
 
-        return { success: true, user: authenticatedUser };
+        return {
+          success: true,
+          data: userData,
+          message: "Login successful",
+        };
       } else {
-        return { success: false, message: "Invalid email or password" };
+        return {
+          success: false,
+          message: result.error || "Login failed",
+        };
       }
     } catch (error) {
-      console.error("Login error:", error);
-      return { success: false, message: "An error occurred during login" };
+      console.error("User login error:", error);
+      return {
+        success: false,
+        message: "An unexpected error occurred",
+      };
     }
   };
 
-  // Login function for customers
+  // Customer login
   const loginCustomer = async (email, password) => {
     try {
-      const authenticatedCustomer = authenticateCustomer(email, password);
+      const result = await authAPI.loginCustomer(email, password);
 
-      if (authenticatedCustomer) {
-        setCustomer(authenticatedCustomer);
-        setUser(null); // Clear user state
-        setUserType("customer");
+      if (result.success && result.data) {
+        const { customer: customerData, token } = result.data;
 
-        // Save to localStorage
+        // Store customer data and token
+        setCustomer(customerData);
+        setUserType(USER_ROLES.CUSTOMER);
+        tokenManager.setCustomerToken(token);
         localStorage.setItem(
-          "techmart_customer",
-          JSON.stringify(authenticatedCustomer)
+          STORAGE_KEYS.CUSTOMER,
+          JSON.stringify(customerData)
         );
-        localStorage.setItem("techmart_user_type", "customer");
-        localStorage.removeItem("techmart_user"); // Clear user data
+        localStorage.setItem(STORAGE_KEYS.USER_TYPE, USER_ROLES.CUSTOMER);
 
-        return { success: true, customer: authenticatedCustomer };
+        return {
+          success: true,
+          data: customerData,
+          message: "Login successful",
+        };
       } else {
-        return { success: false, message: "Invalid email or password" };
+        return {
+          success: false,
+          message: result.error || "Login failed",
+        };
       }
     } catch (error) {
       console.error("Customer login error:", error);
-      return { success: false, message: "An error occurred during login" };
+      return {
+        success: false,
+        message: "An unexpected error occurred",
+      };
     }
   };
 
-  // Logout function
-  const logout = () => {
-    setUser(null);
-    setCustomer(null);
-    setUserType(null);
+  // Register customer
+  const registerCustomer = async (customerData) => {
+    try {
+      const result = await authAPI.registerCustomer(customerData);
 
-    // Clear localStorage
-    localStorage.removeItem("techmart_user");
-    localStorage.removeItem("techmart_customer");
-    localStorage.removeItem("techmart_user_type");
+      if (result.success && result.data) {
+        const { customer: newCustomer, token } = result.data;
+
+        // Auto-login after registration
+        setCustomer(newCustomer);
+        setUserType(USER_ROLES.CUSTOMER);
+        tokenManager.setCustomerToken(token);
+        localStorage.setItem(
+          STORAGE_KEYS.CUSTOMER,
+          JSON.stringify(newCustomer)
+        );
+        localStorage.setItem(STORAGE_KEYS.USER_TYPE, USER_ROLES.CUSTOMER);
+
+        return {
+          success: true,
+          data: newCustomer,
+          message: "Registration successful",
+        };
+      } else {
+        return {
+          success: false,
+          message: result.error || "Registration failed",
+        };
+      }
+    } catch (error) {
+      console.error("Customer registration error:", error);
+      return {
+        success: false,
+        message: "An unexpected error occurred",
+      };
+    }
   };
 
-  // Check if user is authenticated
+  // Register user (admin only)
+  const registerUser = async (userData) => {
+    try {
+      const result = await authAPI.registerUser(userData);
+
+      if (result.success && result.data) {
+        return {
+          success: true,
+          data: result.data.user,
+          message: "User registered successfully",
+        };
+      } else {
+        return {
+          success: false,
+          message: result.error || "User registration failed",
+        };
+      }
+    } catch (error) {
+      console.error("User registration error:", error);
+      return {
+        success: false,
+        message: "An unexpected error occurred",
+      };
+    }
+  };
+
+  // Logout
+  const logout = async () => {
+    try {
+      // Call logout endpoint based on user type
+      if (user) {
+        await authAPI.logoutUser();
+      } else if (customer) {
+        await authAPI.logoutCustomer();
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear all state regardless of API call success
+      setUser(null);
+      setCustomer(null);
+      setUserType(null);
+      tokenManager.clearAllTokens();
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      localStorage.removeItem(STORAGE_KEYS.CUSTOMER);
+      localStorage.removeItem(STORAGE_KEYS.USER_TYPE);
+    }
+  };
+
+  // Check if any user is authenticated
   const isAuthenticated = () => {
     return user !== null || customer !== null;
   };
@@ -161,7 +262,7 @@ export const AuthProvider = ({ children }) => {
     return customer !== null;
   };
 
-  // Get current authenticated entity (user or customer)
+  // Get current authenticated entity
   const getCurrentAuth = () => {
     if (user) return { ...user, type: user.role };
     if (customer) return { ...customer, type: "customer" };
@@ -169,31 +270,69 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Update user profile
-  const updateUserProfile = (updatedData) => {
-    if (user) {
-      const updatedUser = {
-        ...user,
-        ...updatedData,
-        updated_at: new Date().toISOString(),
+  const updateUserProfile = async (updatedData) => {
+    if (!user) return { success: false, message: "No user logged in" };
+
+    try {
+      const result = await authAPI.updateUserProfile(updatedData);
+
+      if (result.success && result.data) {
+        const updatedUser = result.data.user;
+        setUser(updatedUser);
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+
+        return {
+          success: true,
+          data: updatedUser,
+          message: "Profile updated successfully",
+        };
+      } else {
+        return {
+          success: false,
+          message: result.error || "Failed to update profile",
+        };
+      }
+    } catch (error) {
+      console.error("Update user profile error:", error);
+      return {
+        success: false,
+        message: "An unexpected error occurred",
       };
-      setUser(updatedUser);
-      localStorage.setItem("techmart_user", JSON.stringify(updatedUser));
     }
   };
 
   // Update customer profile
-  const updateCustomerProfile = (updatedData) => {
-    if (customer) {
-      const updatedCustomer = {
-        ...customer,
-        ...updatedData,
-        updated_at: new Date().toISOString(),
+  const updateCustomerProfile = async (updatedData) => {
+    if (!customer) return { success: false, message: "No customer logged in" };
+
+    try {
+      const result = await authAPI.updateCustomerProfile(updatedData);
+
+      if (result.success && result.data) {
+        const updatedCustomer = result.data.customer;
+        setCustomer(updatedCustomer);
+        localStorage.setItem(
+          STORAGE_KEYS.CUSTOMER,
+          JSON.stringify(updatedCustomer)
+        );
+
+        return {
+          success: true,
+          data: updatedCustomer,
+          message: "Profile updated successfully",
+        };
+      } else {
+        return {
+          success: false,
+          message: result.error || "Failed to update profile",
+        };
+      }
+    } catch (error) {
+      console.error("Update customer profile error:", error);
+      return {
+        success: false,
+        message: "An unexpected error occurred",
       };
-      setCustomer(updatedCustomer);
-      localStorage.setItem(
-        "techmart_customer",
-        JSON.stringify(updatedCustomer)
-      );
     }
   };
 
@@ -207,6 +346,8 @@ export const AuthProvider = ({ children }) => {
     // Actions
     loginUser,
     loginCustomer,
+    registerUser,
+    registerCustomer,
     logout,
     updateUserProfile,
     updateCustomerProfile,

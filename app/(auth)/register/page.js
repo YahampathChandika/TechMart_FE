@@ -1,17 +1,25 @@
-// app/(auth)/register/page.js
+// app/register/page.js
 "use client";
 
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { GuestGuard } from "@/components/auth/AuthGuard";
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   return (
-    <GuestGuard>
-      <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 px-4 py-8">
+      <div className="w-full max-w-md">
+        <div className="bg-card border shadow-lg rounded-lg p-6">
           <RegisterForm />
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <GuestGuard redirectTo="/">
+      <RegisterPageContent />
     </GuestGuard>
   );
 }
