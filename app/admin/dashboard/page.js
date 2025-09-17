@@ -1,4 +1,4 @@
-// app/(admin)/dashboard/page.js
+// app/admin/dashboard/page.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -16,33 +16,138 @@ import {
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/admin/AdminLayout";
 import { DashboardCards } from "@/components/admin/DashboardCards";
-import { LoadingSpinner } from "@/components/common";
+import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
-import { getDashboardStats } from "@/lib/mockData";
+import { authAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 function DashboardContent() {
   const { user, isAdmin } = useAuth();
   const [stats, setStats] = useState(null);
+  const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Transform backend data to frontend format
+  const transformDashboardData = (backendData) => {
+    const transformed = {
+      totalProducts: backendData.products?.active || 0,
+      totalCustomers: backendData.customers?.active || 0,
+      totalUsers: backendData.users?.active_users || 0,
+      lowStockProducts: backendData.products?.low_stock || 0,
+      outOfStockProducts: backendData.products?.out_of_stock || 0,
+    };
+
+    // Calculate total product value from sales data (admin only)
+    if (backendData.sales?.total_cart_value) {
+      transformed.totalProductValue = backendData.sales.total_cart_value;
+    } else {
+      // Fallback for non-admin users
+      transformed.totalProductValue = 0;
+    }
+
+    return transformed;
+  };
+
+  // Transform backend activities to frontend format
+  const transformActivitiesData = (activitiesData) => {
+    const activities = [];
+
+    // Add recent products as activities
+    if (activitiesData.recent_products) {
+      activitiesData.recent_products.slice(0, 3).forEach((product, index) => {
+        activities.push({
+          id: `product_${product.id}`,
+          type: "product",
+          title: "New product added",
+          description: `${product.brand} ${product.name} was added to inventory`,
+          time: formatTimeAgo(product.created_at),
+          icon: Package,
+        });
+      });
+    }
+
+    // Add recent customers as activities (admin only)
+    if (activitiesData.recent_customers) {
+      activitiesData.recent_customers.slice(0, 2).forEach((customer, index) => {
+        activities.push({
+          id: `customer_${customer.id}`,
+          type: "customer",
+          title: "New customer registration",
+          description: `${customer.first_name} ${customer.last_name} joined as a customer`,
+          time: formatTimeAgo(customer.created_at),
+          icon: Users,
+        });
+      });
+    }
+
+    return activities.slice(0, 5); // Limit to 5 activities
+  };
+
+  // Format time ago helper
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
 
   useEffect(() => {
-    // Simulate loading dashboard stats
-    const loadStats = async () => {
+    const loadDashboardData = async () => {
       setLoading(true);
+      setError(null);
+
       try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        const dashboardStats = getDashboardStats();
-        setStats(dashboardStats);
-      } catch (error) {
-        console.error("Failed to load dashboard stats:", error);
+        // Load dashboard stats
+        const statsResult = await authAPI.getDashboardStats();
+
+        if (!statsResult.success) {
+          throw new Error(
+            statsResult.error || "Failed to load dashboard statistics"
+          );
+        }
+
+        const transformedStats = transformDashboardData(statsResult.data);
+        setStats(transformedStats);
+
+        // Load recent activities (optional - don't fail if it doesn't work)
+        try {
+          const activitiesResult = await authAPI.getDashboardActivities();
+          if (activitiesResult.success && activitiesResult.data) {
+            const transformedActivities = transformActivitiesData(
+              activitiesResult.data
+            );
+            setRecentActivities(transformedActivities);
+          }
+        } catch (activitiesError) {
+          console.warn("Failed to load recent activities:", activitiesError);
+          // Use fallback activities if API fails
+          setRecentActivities([
+            {
+              id: 1,
+              type: "system",
+              title: "Dashboard loaded",
+              description: "Dashboard statistics updated successfully",
+              time: "Just now",
+              icon: BarChart3,
+            },
+          ]);
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+        setError(err.message || "Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
     };
 
-    loadStats();
+    loadDashboardData();
   }, []);
 
   if (loading) {
@@ -53,32 +158,28 @@ function DashboardContent() {
     );
   }
 
-  const recentActivities = [
-    {
-      id: 1,
-      type: "product",
-      title: "New product added",
-      description: "iPhone 15 Pro Max was added to inventory",
-      time: "2 hours ago",
-      icon: Package,
-    },
-    {
-      id: 2,
-      type: "customer",
-      title: "New customer registration",
-      description: "Alice Anderson joined as a customer",
-      time: "4 hours ago",
-      icon: Users,
-    },
-    {
-      id: 3,
-      type: "sale",
-      title: "Low stock alert",
-      description: "Dell XPS 13 Laptop is running low on stock",
-      time: "6 hours ago",
-      icon: TrendingUp,
-    },
-  ];
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">
+              Welcome back, {user?.first_name}! 👋
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Here&apos;s what&apos;s happening with your store today.
+            </p>
+          </div>
+        </div>
+
+        <ErrorMessage
+          title="Failed to Load Dashboard"
+          message={error}
+          onRetry={() => window.location.reload()}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -91,23 +192,6 @@ function DashboardContent() {
           <p className="text-muted-foreground mt-1">
             Here&apos;s what&apos;s happening with your store today.
           </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Link href="/admin/products/create">
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Product
-            </Button>
-          </Link>
-          {isAdmin() && (
-            <Link href="/admin/users/create">
-              <Button variant="outline" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Add User
-              </Button>
-            </Link>
-          )}
         </div>
       </div>
 
@@ -132,161 +216,88 @@ function DashboardContent() {
             </div>
 
             <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <activity.icon className="h-5 w-5 text-primary" />
+              {recentActivities.length > 0 ? (
+                recentActivities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors"
+                  >
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                      <activity.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-foreground truncate">
+                        {activity.title}
+                      </h4>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {activity.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {activity.time}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-foreground">
-                      {activity.title}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {activity.description}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {activity.time}
-                    </p>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No recent activities to show</p>
                 </div>
-              ))}
+              )}
             </div>
-
-            {recentActivities.length === 0 && (
-              <div className="text-center py-8">
-                <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">No recent activity</p>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Quick Stats & Today&apos;s Summary */}
-        <div className="space-y-6">
-          {/* Today&apos;s Summary */}
-          <div className="bg-background border rounded-lg p-6">
-            <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
-              <Calendar className="h-5 w-5" />
-              Today&apos;s Summary
-            </h3>
+        {/* Quick Links */}
+        <div className="bg-background border rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Products Added
-                </span>
-                <span className="text-sm font-medium">2</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  New Customers
-                </span>
-                <span className="text-sm font-medium">5</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Stock Alerts
-                </span>
-                <span className="text-sm font-medium text-orange-600">3</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  User Updates
-                </span>
-                <span className="text-sm font-medium">1</span>
-              </div>
-            </div>
-          </div>
+          <div className="space-y-2">
+            <Link href="/admin/products">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Manage Products
+              </Button>
+            </Link>
 
-          {/* System Status */}
-          <div className="bg-background border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">System Status</h3>
+            <Link href="/admin/customers">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                View Customers
+              </Button>
+            </Link>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Database</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-600">Healthy</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  File Storage
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-600">Healthy</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Email Service
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm text-yellow-600">Degraded</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Links */}
-          <div className="bg-background border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-
-            <div className="space-y-2">
-              <Link href="/admin/products">
+            {isAdmin() && (
+              <Link href="/admin/users">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="w-full justify-start"
                 >
-                  <Package className="h-4 w-4 mr-2" />
-                  Manage Products
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Manage Users
                 </Button>
               </Link>
+            )}
 
-              <Link href="/admin/customers">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  View Customers
-                </Button>
-              </Link>
-
-              {isAdmin() && (
-                <Link href="/admin/users">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Manage Users
-                  </Button>
-                </Link>
-              )}
-
-              <Link href="/">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View Storefront
-                </Button>
-              </Link>
-            </div>
+            <Link href="/">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Storefront
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

@@ -97,27 +97,33 @@ export const DashboardCards = ({ stats, className = "" }) => {
     const colors = {
       blue: {
         default: "text-blue-600 bg-blue-100 dark:bg-blue-900/20",
-        urgent: "text-blue-700 bg-blue-50 border-blue-200",
+        urgent:
+          "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-950/10 dark:border-blue-950",
       },
       green: {
         default: "text-green-600 bg-green-100 dark:bg-green-900/20",
-        urgent: "text-green-700 bg-green-50 border-green-200",
+        urgent:
+          "text-green-700 bg-green-50 border-green-200 dark:text-green-300 dark:bg-green-950/10 dark:border-green-950",
       },
       purple: {
         default: "text-purple-600 bg-purple-100 dark:bg-purple-900/20",
-        urgent: "text-purple-700 bg-purple-50 border-purple-200",
+        urgent:
+          "text-purple-700 bg-purple-50 border-purple-200 dark:text-purple-300 dark:bg-purple-950/10 dark:border-purple-950",
       },
       orange: {
         default: "text-orange-600 bg-orange-100 dark:bg-orange-900/20",
-        urgent: "text-orange-700 bg-orange-50 border-orange-200",
+        urgent:
+          "text-orange-700 bg-orange-50 border-orange-200 dark:text-orange-300 dark:bg-orange-950/10 dark:border-orange-950",
       },
       yellow: {
         default: "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20",
-        urgent: "text-yellow-700 bg-yellow-50 border-yellow-200",
+        urgent:
+          "text-yellow-700 bg-yellow-50 border-yellow-200 dark:text-yellow-300 dark:bg-yellow-950/10 dark:border-yellow-950",
       },
       red: {
         default: "text-red-600 bg-red-100 dark:bg-red-900/20",
-        urgent: "text-red-700 bg-red-50 border-red-200",
+        urgent:
+          "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-950/10 dark:border-red-950",
       },
     };
     return colors[color]?.[variant] || colors.blue[variant];
@@ -223,52 +229,6 @@ export const DashboardCards = ({ stats, className = "" }) => {
             </div>
           </Link>
         ))}
-      </div>
-
-      {/* Quick Actions Grid */}
-      <div className="bg-muted/50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link href="/admin/products/create">
-            <Button
-              variant="outline"
-              className="w-full h-20 flex flex-col items-center gap-2 hover:bg-background"
-            >
-              <Package className="h-6 w-6" />
-              <span className="text-sm">Add Product</span>
-            </Button>
-          </Link>
-
-          <Link href="/admin/users/create">
-            <Button
-              variant="outline"
-              className="w-full h-20 flex flex-col items-center gap-2 hover:bg-background"
-            >
-              <Users className="h-6 w-6" />
-              <span className="text-sm">Add User</span>
-            </Button>
-          </Link>
-
-          <Link href="/admin/products">
-            <Button
-              variant="outline"
-              className="w-full h-20 flex flex-col items-center gap-2 hover:bg-background"
-            >
-              <Eye className="h-6 w-6" />
-              <span className="text-sm">View Products</span>
-            </Button>
-          </Link>
-
-          <Link href="/admin/customers">
-            <Button
-              variant="outline"
-              className="w-full h-20 flex flex-col items-center gap-2 hover:bg-background"
-            >
-              <ShoppingCart className="h-6 w-6" />
-              <span className="text-sm">View Customers</span>
-            </Button>
-          </Link>
-        </div>
       </div>
     </div>
   );
