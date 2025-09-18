@@ -64,7 +64,7 @@ export const AdminNavbar = ({
         </Button>
 
         {/* Search */}
-        {showSearch && (
+        {/* {showSearch && (
           <div className="flex-1 max-w-lg">
             <form onSubmit={handleSearchSubmit}>
               <div className="relative">
@@ -79,7 +79,8 @@ export const AdminNavbar = ({
               </div>
             </form>
           </div>
-        )}
+        )} */}
+        <span className="hidden sm:inline font-bold text-2xl">Admin Panel</span>
 
         {/* Right side actions */}
         <div className="flex items-center gap-2 ml-auto">

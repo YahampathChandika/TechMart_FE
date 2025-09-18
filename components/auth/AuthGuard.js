@@ -1,4 +1,4 @@
-// components/auth/AuthGuard.js
+// components/auth/AuthGuard.js - UPDATED FOR PRIVILEGE SYSTEM
 "use client";
 
 import { useEffect, useState } from "react";
@@ -93,8 +93,12 @@ export const AuthGuard = ({
     );
   }
 
-  // Check if admin/user is trying to access customer-only pages
-  if (isCustomer() && (requireAdmin || pathname.startsWith("/admin/dashboard"))) {
+  // UPDATED: Allow both admin and regular users in admin area (unless specifically requireAdmin is true)
+  // Check if customer is trying to access admin pages (but admin/user is allowed)
+  if (
+    isCustomer() &&
+    (pathname.startsWith("/admin") || pathname.startsWith("/admin/dashboard"))
+  ) {
     if (fallback) {
       return fallback;
     }
@@ -106,7 +110,7 @@ export const AuthGuard = ({
     );
   }
 
-  // Check if customer is trying to access admin pages
+  // Check if admin/user is trying to access customer-only pages
   if ((isAdmin() || isUser()) && requireCustomer) {
     if (fallback) {
       return fallback;
@@ -123,15 +127,23 @@ export const AuthGuard = ({
   return children;
 };
 
-// Specialized guards for common use cases
+// UPDATED: Specialized guards for common use cases
 export const AdminGuard = ({ children, fallback = null }) => (
-  <AuthGuard requireAuth={true} requireAdmin={true} fallback={fallback}>
+  // CHANGED: Remove requireAdmin requirement - now allows any authenticated user
+  <AuthGuard requireAuth={true} requireAdmin={false} fallback={fallback}>
     {children}
   </AuthGuard>
 );
 
 export const CustomerGuard = ({ children, fallback = null }) => (
   <AuthGuard requireAuth={true} requireCustomer={true} fallback={fallback}>
+    {children}
+  </AuthGuard>
+);
+
+// NEW: Guard that specifically requires admin role (for admin-only operations like user management)
+export const StrictAdminGuard = ({ children, fallback = null }) => (
+  <AuthGuard requireAuth={true} requireAdmin={true} fallback={fallback}>
     {children}
   </AuthGuard>
 );
@@ -193,6 +205,7 @@ export const useAuthGuard = (options = {}) => {
       };
     }
 
+    // UPDATED: Only check admin requirement if specifically required
     if (requireAdmin && !isAdmin()) {
       return {
         allowed: false,

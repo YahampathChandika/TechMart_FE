@@ -122,7 +122,7 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between p-4 bordser-b">
         {!isCollapsed && (
           <Link
             href="/admin/dashboard"
@@ -132,7 +132,6 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
               <span className="hidden sm:inline font-bold text-xl">
                 🛒 {APP_CONFIG.name}
               </span>
-              <span className="text-xs text-muted-foreground">Admin Panel</span>
             </div>
           </Link>
         )}
@@ -153,7 +152,7 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
       </div>
 
       {/* User Info */}
-      <div className="p-4 border-b">
+      {/* <div className="p-4 border-b">
         <div
           className={cn(
             "flex items-center",
@@ -174,7 +173,7 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
             </div>
           )}
         </div>
-      </div>
+      </div> */}
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-6 overflow-y-auto">

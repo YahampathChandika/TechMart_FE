@@ -1,8 +1,14 @@
-// app/admin/layout.js
+// app/admin/layout.js - FIXED TO ALLOW ALL AUTHENTICATED USERS
 "use client";
 
-import { AdminGuard } from "@/components/auth/AuthGuard";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 
 export default function AdminLayout({ children }) {
-  return <AdminGuard requireAdmin={true}>{children}</AdminGuard>;
+  // CHANGED: Remove requireAdmin=true, only require authentication
+  // This allows both admin and regular users to access admin area
+  return (
+    <AuthGuard requireAuth={true} requireAdmin={false}>
+      {children}
+    </AuthGuard>
+  );
 }
