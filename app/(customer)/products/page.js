@@ -1,7 +1,7 @@
-// app/(customer)/products/page.js - Updated to work with new ProductGrid
+// app/(customer)/products/page.js - Fixed with Suspense boundary
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ProductGrid } from "@/components/customer/ProductGrid";
 import { SearchFilters } from "@/components/customer/SearchFilters";
@@ -12,7 +12,7 @@ import { Search, Filter, X } from "lucide-react";
 import { usePublicProducts } from "@/hooks/useProducts";
 import { useBrands, useFilterOptions } from "@/hooks/useBrands";
 
-export default function ProductsPage() {
+function ProductsPageContent() {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || ""
@@ -33,7 +33,8 @@ export default function ProductsPage() {
   const { filterOptions, loading: filtersLoading } = useFilterOptions();
 
   // Use products hook with current filters
-  const { products, loading, error, meta, refresh } = usePublicProducts(filters);
+  const { products, loading, error, meta, refresh } =
+    usePublicProducts(filters);
 
   // Prepare available filters for SearchFilters component
   const availableFilters = {
@@ -276,5 +277,19 @@ export default function ProductsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      }
+    >
+      <ProductsPageContent />
+    </Suspense>
   );
 }
