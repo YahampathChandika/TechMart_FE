@@ -5,18 +5,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  Search,
   ShoppingCart,
   User,
   Menu,
   X,
   LogOut,
   Settings,
-  Package,
   Star,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -37,7 +35,6 @@ export const Header = () => {
   const { user, customer, logout, isCustomer, isAdmin, isUser } = useAuth();
   const { cartCount, loading: cartLoading } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [cartHovered, setCartHovered] = useState(false);
 
   const currentAuth = user || customer;
@@ -47,102 +44,109 @@ export const Header = () => {
     router.push(ROUTES.HOME);
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery("");
-    }
-  };
-
   const isAdminRoute = pathname.startsWith("/admin");
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+      <div className="container mx-auto px-4 lg:px-6">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link
             href={ROUTES.HOME}
-            className="flex flex-col items-left space-x-2"
+            className="flex items-center space-x-3 hover:opacity-90 transition-opacity"
           >
-            <h1 className="hidden sm:inline font-bold text-xl">
-              🛒 {APP_CONFIG.name}
-            </h1>
-            <p className="text-muted-foreground text-xs md:text-sm">
-              Your Electronics Store
-            </p>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">
+                  🛒
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <h1 className="font-semibold text-lg tracking-tight text-foreground">
+                  {APP_CONFIG.name}
+                </h1>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  Premium Electronics
+                </p>
+              </div>
+            </div>
           </Link>
 
-          {/* Navigation - Hidden on admin routes */}
-          {!isAdminRoute && (
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link
-                href={ROUTES.HOME}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === ROUTES.HOME
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
-              >
-                Home
-              </Link>
-              <Link
-                href={ROUTES.PRODUCTS}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === ROUTES.PRODUCTS
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
-              >
-                Products
-              </Link>
-            </nav>
-          )}
+          {/* Navigation */}
+          <nav className="hidden lg:flex items-center space-x-8">
+            {!isAdminRoute ? (
+              <>
+                <Link
+                  href={ROUTES.HOME}
+                  className={`text-sm font-medium transition-colors hover:text-primary relative py-2 ${
+                    pathname === ROUTES.HOME
+                      ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full"
+                      : "text-foreground/80"
+                  }`}
+                >
+                  Home
+                </Link>
+                <Link
+                  href={ROUTES.PRODUCTS}
+                  className={`text-sm font-medium transition-colors hover:text-primary relative py-2 ${
+                    pathname === ROUTES.PRODUCTS
+                      ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full"
+                      : "text-foreground/80"
+                  }`}
+                >
+                  Products
+                </Link>
+                {/* Admin Dashboard Link for Admins/Staff */}
+                {(isAdmin() || isUser()) && (
+                  <Link
+                    href={ROUTES.ADMIN_DASHBOARD}
+                    className="text-sm font-medium transition-colors hover:text-primary text-foreground/80 flex items-center space-x-1"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Admin</span>
+                  </Link>
+                )}
+              </>
+            ) : (
+              <>
+                <Link
+                  href={ROUTES.HOME}
+                  className="text-sm font-medium transition-colors hover:text-primary text-foreground/80 flex items-center space-x-1"
+                >
+                  <Star className="h-4 w-4" />
+                  <span>Storefront</span>
+                </Link>
+                <Link
+                  href={ROUTES.ADMIN_DASHBOARD}
+                  className={`text-sm font-medium transition-colors hover:text-primary relative py-2 ${
+                    pathname === ROUTES.ADMIN_DASHBOARD
+                      ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full"
+                      : "text-foreground/80"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+              </>
+            )}
+          </nav>
 
           {/* Admin Breadcrumb - Shown on admin routes */}
           {isAdminRoute && (
-            <nav className="hidden md:flex items-center space-x-2 text-sm text-muted-foreground">
+            <nav className="hidden lg:flex items-center space-x-2 text-sm">
               <Link
                 href={ROUTES.ADMIN_DASHBOARD}
-                className="hover:text-primary transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors font-medium"
               >
                 Admin Panel
               </Link>
-              <span>/</span>
-              <span className="text-foreground capitalize">
+              <ChevronDown className="h-3 w-3 rotate-[-90deg] text-muted-foreground" />
+              <span className="text-foreground font-medium capitalize">
                 {pathname.split("/").pop() || "Dashboard"}
               </span>
             </nav>
           )}
 
-          {/* Search Bar - Only on non-admin routes */}
-          {!isAdminRoute && (
-            <div className="hidden md:flex flex-1 max-w-sm mx-6">
-              <form onSubmit={handleSearch} className="flex w-full">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  size="sm"
-                  className="ml-1"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </form>
-            </div>
-          )}
-
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -157,14 +161,14 @@ export const Header = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="relative"
+                    className="relative hover:bg-accent/50 transition-colors"
                     disabled={cartLoading}
                   >
                     <ShoppingCart className="h-5 w-5" />
                     {cartCount > 0 && (
                       <Badge
                         variant="destructive"
-                        className="absolute -right-2 -top-2 h-5 w-5 rounded-full p-0 text-xs"
+                        className="absolute -right-1 -top-1 h-4 w-4 rounded-full p-0 text-xs font-semibold"
                       >
                         {cartCount > 99 ? "99+" : cartCount}
                       </Badge>
@@ -188,25 +192,31 @@ export const Header = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="flex items-center space-x-2"
+                    className="flex items-center space-x-2 hover:bg-accent/50 transition-colors px-3"
                   >
-                    <User className="h-5 w-5" />
-                    <span className="hidden md:block">
-                      {currentAuth.first_name} {currentAuth.last_name}
-                    </span>
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="hidden md:flex flex-col items-start">
+                      <span className="text-sm font-medium leading-none">
+                        {currentAuth.first_name} {currentAuth.last_name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {isAdmin() ? "Admin" : isUser() ? "Staff" : "Customer"}
+                      </span>
+                    </div>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    Signed in as
+                <DropdownMenuContent align="end" className="w-64">
+                  <div className="px-3 py-2 border-b">
+                    <div className="text-sm font-medium text-foreground">
+                      {currentAuth.first_name} {currentAuth.last_name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {currentAuth.email}
+                    </div>
                   </div>
-                  <div className="px-2 py-1.5 text-sm font-medium">
-                    {currentAuth.first_name} {currentAuth.last_name}
-                  </div>
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                    {currentAuth.email}
-                  </div>
-                  <DropdownMenuSeparator />
 
                   {/* Customer Menu Items */}
                   {isCustomer() && !isAdminRoute && (
@@ -214,18 +224,24 @@ export const Header = () => {
                       <DropdownMenuItem asChild>
                         <Link
                           href={ROUTES.CUSTOMER_PROFILE}
-                          className="flex items-center"
+                          className="flex items-center cursor-pointer"
                         >
-                          <User className="mr-2 h-4 w-4" />
-                          Profile
+                          <User className="mr-3 h-4 w-4" />
+                          <span>Profile Settings</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={ROUTES.CART} className="flex items-center">
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                          Shopping Cart
+                        <Link
+                          href={ROUTES.CART}
+                          className="flex items-center cursor-pointer"
+                        >
+                          <ShoppingCart className="mr-3 h-4 w-4" />
+                          <span>Shopping Cart</span>
                           {cartCount > 0 && (
-                            <Badge variant="secondary" className="ml-auto">
+                            <Badge
+                              variant="secondary"
+                              className="ml-auto text-xs"
+                            >
                               {cartCount}
                             </Badge>
                           )}
@@ -241,20 +257,22 @@ export const Header = () => {
                       <DropdownMenuItem asChild>
                         <Link
                           href={ROUTES.ADMIN_DASHBOARD}
-                          className="flex items-center"
+                          className="flex items-center cursor-pointer"
                         >
-                          <Settings className="mr-2 h-4 w-4" />
-                          {isAdminRoute ? "Dashboard" : "Admin Panel"}
+                          <Settings className="mr-3 h-4 w-4" />
+                          <span>
+                            {isAdminRoute ? "Dashboard" : "Admin Panel"}
+                          </span>
                         </Link>
                       </DropdownMenuItem>
                       {isAdminRoute && (
                         <DropdownMenuItem asChild>
                           <Link
                             href={ROUTES.HOME}
-                            className="flex items-center"
+                            className="flex items-center cursor-pointer"
                           >
-                            <Star className="mr-2 h-4 w-4" />
-                            View Storefront
+                            <Star className="mr-3 h-4 w-4" />
+                            <span>View Storefront</span>
                           </Link>
                         </DropdownMenuItem>
                       )}
@@ -262,19 +280,27 @@ export const Header = () => {
                     </>
                   )}
 
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <LogOut className="mr-3 h-4 w-4" />
+                    <span>Sign Out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-medium"
+                  asChild
+                >
                   <Link href={ROUTES.LOGIN}>Sign In</Link>
                 </Button>
-                <Button size="sm" asChild>
-                  <Link href={ROUTES.REGISTER}>Sign Up</Link>
+                <Button size="sm" className="font-medium" asChild>
+                  <Link href={ROUTES.REGISTER}>Get Started</Link>
                 </Button>
               </div>
             )}
@@ -283,7 +309,7 @@ export const Header = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden"
+              className="lg:hidden p-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
@@ -297,110 +323,139 @@ export const Header = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t py-4">
-            {/* Mobile Search - Only on non-admin routes */}
-            {!isAdminRoute && (
-              <form onSubmit={handleSearch} className="mb-4">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </form>
-            )}
-
-            {/* Mobile Navigation - Only on non-admin routes */}
-            {!isAdminRoute && (
-              <nav className="space-y-2">
-                <Link
-                  href={ROUTES.HOME}
-                  className={`block py-2 text-sm font-medium transition-colors ${
-                    pathname === ROUTES.HOME
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-primary"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Home
-                </Link>
-                <Link
-                  href={ROUTES.PRODUCTS}
-                  className={`block py-2 text-sm font-medium transition-colors ${
-                    pathname === ROUTES.PRODUCTS
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-primary"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Products
-                </Link>
+          <div className="lg:hidden border-t bg-background/95 backdrop-blur">
+            <div className="px-4 py-4 space-y-3">
+              {/* Mobile Navigation */}
+              <nav className="space-y-1">
+                {!isAdminRoute ? (
+                  <>
+                    <Link
+                      href={ROUTES.HOME}
+                      className={`flex items-center py-3 px-2 text-sm font-medium rounded-lg transition-colors ${
+                        pathname === ROUTES.HOME
+                          ? "text-primary bg-primary/5"
+                          : "text-foreground/80 hover:text-primary hover:bg-accent/50"
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Home
+                    </Link>
+                    <Link
+                      href={ROUTES.PRODUCTS}
+                      className={`flex items-center py-3 px-2 text-sm font-medium rounded-lg transition-colors ${
+                        pathname === ROUTES.PRODUCTS
+                          ? "text-primary bg-primary/5"
+                          : "text-foreground/80 hover:text-primary hover:bg-accent/50"
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Products
+                    </Link>
+                    {/* Admin Dashboard Link for Mobile */}
+                    {(isAdmin() || isUser()) && (
+                      <Link
+                        href={ROUTES.ADMIN_DASHBOARD}
+                        className="flex items-center py-3 px-2 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Settings className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href={ROUTES.HOME}
+                      className="flex items-center py-3 px-2 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Star className="mr-2 h-4 w-4" />
+                      Storefront
+                    </Link>
+                    <Link
+                      href={ROUTES.ADMIN_DASHBOARD}
+                      className={`flex items-center py-3 px-2 text-sm font-medium rounded-lg transition-colors ${
+                        pathname === ROUTES.ADMIN_DASHBOARD
+                          ? "text-primary bg-primary/5"
+                          : "text-foreground/80 hover:text-primary hover:bg-accent/50"
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </Link>
+                  </>
+                )}
 
                 {/* Customer Mobile Menu */}
-                {isCustomer() && (
+                {isCustomer() && !isAdminRoute && (
                   <>
                     <Link
                       href={ROUTES.CART}
-                      className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                      className="flex items-center justify-between py-3 px-2 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Cart {cartCount > 0 && `(${cartCount})`}
+                      <span>Shopping Cart</span>
+                      {cartCount > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {cartCount}
+                        </Badge>
+                      )}
                     </Link>
                     <Link
                       href={ROUTES.CUSTOMER_PROFILE}
-                      className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                      className="flex items-center py-3 px-2 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Profile
+                      Profile Settings
                     </Link>
                   </>
                 )}
               </nav>
-            )}
 
-            {/* Mobile Auth */}
-            {!currentAuth && (
-              <div className="mt-4 space-y-2">
-                <Button variant="outline" size="sm" className="w-full" asChild>
-                  <Link
-                    href={ROUTES.LOGIN}
-                    onClick={() => setMobileMenuOpen(false)}
+              {/* Mobile Auth */}
+              <div className="pt-3 border-t">
+                {!currentAuth ? (
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full font-medium"
+                      asChild
+                    >
+                      <Link
+                        href={ROUTES.LOGIN}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Sign In
+                      </Link>
+                    </Button>
+                    <Button size="sm" className="w-full font-medium" asChild>
+                      <Link
+                        href={ROUTES.REGISTER}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Get Started
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full font-medium text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
                   >
-                    Sign In
-                  </Link>
-                </Button>
-                <Button size="sm" className="w-full" asChild>
-                  <Link
-                    href={ROUTES.REGISTER}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign Up
-                  </Link>
-                </Button>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
+                )}
               </div>
-            )}
-
-            {/* Mobile Logout */}
-            {currentAuth && (
-              <div className="mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    handleLogout();
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </Button>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </div>
