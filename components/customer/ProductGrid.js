@@ -249,35 +249,13 @@ export const ProductGrid = ({
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {displayProducts.map((product) => (
-            <div
+            <ProductCardCompact
               key={product.id}
-              className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow"
-            >
-              <div className="sm:w-48 flex-shrink-0">
-                <ProductCardCompact product={product} showAddToCart={false} />
-              </div>
-              <div className="flex-1 space-y-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg">{product.name}</h3>
-                    <p className="text-muted-foreground">{product.brand}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-primary">
-                      ${product.cost_price}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {product.quantity > 0 ? "In Stock" : "Out of Stock"}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {product.description}
-                </p>
-              </div>
-            </div>
+              product={product}
+              showAddToCart={false}
+            />
           ))}
         </div>
       )}

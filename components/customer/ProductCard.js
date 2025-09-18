@@ -250,19 +250,153 @@ export const ProductCard = ({
   );
 };
 
-// Compact version for lists
+// Compact version for lists with horizontal layout
 export const ProductCardCompact = ({
   product,
   className = "",
   showAddToCart = true,
-}) => (
-  <ProductCard
-    product={product}
-    size="compact"
-    className={className}
-    showAddToCart={showAddToCart}
-  />
-);
+}) => {
+  const { isCustomer } = useAuth();
+  const {
+    addToCart,
+    isInCart,
+    getProductQuantityInCart,
+    loading: cartLoading,
+  } = useCart();
+  const [adding, setAdding] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const inCart = isInCart(product.id);
+  const cartQuantity = getProductQuantityInCart(product.id);
+  const isOutOfStock = product.quantity === 0;
+
+  const handleAddToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isCustomer()) {
+      window.location.href = "/login";
+      return;
+    }
+
+    setAdding(true);
+    try {
+      await addToCart(product.id, 1);
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    if (url.startsWith("storage/")) return `http://localhost:8000/${url}`;
+    if (url.startsWith("/")) return url;
+    return `/${url}`;
+  };
+
+  const imageUrl = formatImageUrl(product.image_url || product.image_path);
+
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all p-3",
+        className
+      )}
+    >
+      {/* Left: Image */}
+      <Link
+        href={`/products/${product.id}`}
+        className="relative w-28 h-28 flex-shrink-0 rounded-md overflow-hidden bg-muted"
+      >
+        {!imageError && imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={product.name}
+            fill
+            className="object-cover"
+            onError={() => setImageError(true)}
+            sizes="120px"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <Package className="h-10 w-10 text-muted-foreground" />
+          </div>
+        )}
+      </Link>
+
+      {/* Right: Content */}
+      <div className="flex flex-col flex-1">
+        <Link href={`/products/${product.id}`}>
+          <h3 className="font-medium text-base mb-1 line-clamp-2 hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+        </Link>
+
+        <p className="text-sm text-muted-foreground mb-1">{product.brand}</p>
+
+        {/* Price */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg font-bold text-primary">
+            ${product.cost_price}
+          </span>
+          {product.sell_price && (
+            <span className="text-sm text-muted-foreground line-through">
+              ${product.sell_price}
+            </span>
+          )}
+        </div>
+
+        {/* Stock info */}
+        <p
+          className={cn(
+            "text-sm font-medium",
+            isOutOfStock ? "text-red-600" : "text-green-600"
+          )}
+        >
+          {isOutOfStock ? "Out of Stock" : `In Stock (${product.quantity})`}
+        </p>
+
+        {/* Add to Cart */}
+        {showAddToCart && (
+          <div className="mt-2">
+            {!isOutOfStock ? (
+              <Button
+                onClick={handleAddToCart}
+                disabled={adding || cartLoading}
+                size="sm"
+                variant={inCart ? "outline" : "default"}
+              >
+                {adding ? (
+                  <>
+                    <InlineLoadingSpinner className="mr-2" />
+                    Adding...
+                  </>
+                ) : inCart && isCustomer() ? (
+                  <>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    In Cart ({cartQuantity})
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Add to Cart
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button disabled size="sm" variant="secondary">
+                Out of Stock
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // Large version for featured products
 export const ProductCardLarge = ({
