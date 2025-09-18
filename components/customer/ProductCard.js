@@ -53,7 +53,11 @@ export const ProductCard = ({
     e.preventDefault(); // Prevent link navigation
     e.stopPropagation();
 
-    if (!isCustomer()) return;
+    if (!isCustomer()) {
+      // Redirect to login page if not logged in
+      window.location.href = "/login";
+      return;
+    }
 
     setAdding(true);
     try {
@@ -208,7 +212,7 @@ export const ProductCard = ({
       </Link>
 
       {/* Action Buttons */}
-      {showAddToCart && isCustomer() && (
+      {showAddToCart && (
         <div className="px-2 pb-4">
           {!isOutOfStock ? (
             <Button
@@ -223,7 +227,7 @@ export const ProductCard = ({
                   <InlineLoadingSpinner className="mr-2" />
                   Adding...
                 </>
-              ) : inCart ? (
+              ) : inCart && isCustomer() ? (
                 <>
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   In Cart ({cartQuantity})

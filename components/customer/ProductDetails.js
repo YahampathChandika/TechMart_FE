@@ -54,7 +54,11 @@ export const ProductDetails = ({ product, className = "" }) => {
   };
 
   const handleAddToCart = async () => {
-    if (!isCustomer()) return;
+    if (!isCustomer()) {
+      // Redirect to login page if not logged in
+      window.location.href = "/login";
+      return;
+    }
 
     setAdding(true);
     try {
@@ -302,7 +306,7 @@ export const ProductDetails = ({ product, className = "" }) => {
           </div>
 
           {/* Purchase Section */}
-          {isCustomer() && product.quantity > 0 && (
+          {product.quantity > 0 && (
             <div className="space-y-4 p-4 border rounded-lg">
               {/* Quantity Selector */}
               <div className="flex items-center space-x-4">
@@ -373,7 +377,7 @@ export const ProductDetails = ({ product, className = "" }) => {
               </div>
 
               {/* Current Cart Status */}
-              {inCart && (
+              {inCart && isCustomer() && (
                 <div className="p-3 bg-muted rounded-md">
                   <p className="text-sm">
                     <strong>{cartQuantity}</strong> of this item already in your

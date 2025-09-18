@@ -4,7 +4,6 @@
 import { useState } from "react";
 import { ShoppingCart, Plus, Check, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks";
 import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
