@@ -35,6 +35,7 @@ export const ProductForm = ({
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const isEdit = !!product;
   const pageTitle = isEdit ? "Edit Product" : "Create New Product";
@@ -68,6 +69,22 @@ export const ProductForm = ({
 
   const watchedFields = watch();
 
+  const handleImageChange = (fileOrUrl) => {
+    if (typeof fileOrUrl === "string") {
+      // It's a URL (for removing images or existing images)
+      setValue("image_path", fileOrUrl);
+      setSelectedImage(null);
+    } else if (fileOrUrl instanceof File) {
+      // It's a new file
+      setSelectedImage(fileOrUrl);
+      setValue("image_path", fileOrUrl.name); // Set a preview value
+    } else {
+      // It's empty/null
+      setValue("image_path", "");
+      setSelectedImage(null);
+    }
+  };
+
   const handleFormSubmit = async (data) => {
     if (!hasPermission) {
       setSubmitError("You don't have permission to perform this action.");
@@ -78,29 +95,53 @@ export const ProductForm = ({
     setSubmitSuccess("");
 
     try {
-      // Format data for submission
-      const formattedData = {
-        ...data,
-        quantity: parseInt(data.quantity, 10),
-        cost_price: parseFloat(data.cost_price),
-        sell_price: parseFloat(data.sell_price),
-        rating: parseInt(data.rating, 10),
-        created_by: user?.id,
-      };
+      // Determine if we need to send FormData (for file uploads) or JSON
+      if (selectedImage instanceof File) {
+        // Create FormData for file upload
+        const formData = new FormData();
 
-      if (onSubmit) {
-        await onSubmit(formattedData);
-        setSubmitSuccess(
-          isEdit
-            ? SUCCESS_MESSAGES.PRODUCT_UPDATED
-            : SUCCESS_MESSAGES.PRODUCT_CREATED
-        );
+        // Add all form fields
+        formData.append("name", data.name);
+        formData.append("description", data.description || "");
+        formData.append("brand", data.brand);
+        formData.append("cost_price", parseFloat(data.cost_price) || 0);
+        formData.append("sell_price", parseFloat(data.sell_price) || 0);
+        formData.append("quantity", parseInt(data.quantity, 10) || 0);
+        formData.append("rating", parseInt(data.rating, 10) || 1);
+        formData.append("is_active", data.is_active ? "1" : "0");
 
-        // Redirect after success
-        setTimeout(() => {
-          router.push("/admin/products");
-        }, 1500);
+        // Add image file
+        formData.append("image", selectedImage);
+
+        if (onSubmit) {
+          await onSubmit(formData);
+        }
+      } else {
+        // Send as JSON (no new image file)
+        const formattedData = {
+          ...data,
+          quantity: parseInt(data.quantity, 10),
+          cost_price: parseFloat(data.cost_price),
+          sell_price: parseFloat(data.sell_price),
+          rating: parseInt(data.rating, 10),
+          created_by: user?.id,
+        };
+
+        if (onSubmit) {
+          await onSubmit(formattedData);
+        }
       }
+
+      setSubmitSuccess(
+        isEdit
+          ? SUCCESS_MESSAGES.PRODUCT_UPDATED
+          : SUCCESS_MESSAGES.PRODUCT_CREATED
+      );
+
+      // Redirect after success
+      setTimeout(() => {
+        router.push("/admin/products");
+      }, 1500);
     } catch (err) {
       console.error("Form submission error:", err);
       setSubmitError(
@@ -224,8 +265,8 @@ export const ProductForm = ({
                 control={control}
                 render={({ field }) => (
                   <ImageUpload
-                    value={field.value}
-                    onChange={field.onChange}
+                    value={product?.image_path || ""} // Show existing image if editing
+                    onChange={handleImageChange}
                     disabled={loading || isSubmitting}
                     aspectRatio="square"
                   />

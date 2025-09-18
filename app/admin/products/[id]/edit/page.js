@@ -69,26 +69,13 @@ function EditProductPageContent({ productId }) {
     setSubmitting(true);
 
     try {
-      // Prepare product data for API
-      const productData = {
-        name: formData.name,
-        description: formData.description || "",
-        brand: formData.brand,
-        category: formData.category || "",
-        buy_price: parseFloat(formData.buy_price) || 0,
-        sell_price: parseFloat(formData.sell_price) || 0,
-        quantity: parseInt(formData.quantity) || 0,
-        rating: parseFloat(formData.rating) || 0,
-        is_active: formData.is_active !== undefined ? formData.is_active : true,
-        // Note: Image handling would need to be implemented separately
-      };
-
-      console.log("Updating product with data:", productData);
-
-      const result = await authAPI.updateProduct(
-        parseInt(productId),
-        productData
+      console.log(
+        "Updating product with data:",
+        formData instanceof FormData ? "FormData with image" : formData
       );
+
+      // Pass data directly to API - it handles both FormData and JSON
+      const result = await authAPI.updateProduct(parseInt(productId), formData);
 
       if (!result.success) {
         throw new Error(result.error || "Failed to update product");

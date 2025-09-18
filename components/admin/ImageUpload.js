@@ -20,12 +20,35 @@ export const ImageUpload = ({
   const [preview, setPreview] = useState(value);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const aspectRatioClasses = {
     square: "aspect-square",
     landscape: "aspect-video",
     portrait: "aspect-[3/4]",
+  };
+
+  // Helper function to format image URL for Next.js Image component
+  const formatImageUrl = (url) => {
+    if (!url) return "";
+    
+    // If it's already a blob URL (for previews), return as-is
+    if (url.startsWith("blob:")) return url;
+    
+    // If it's already an absolute URL, return as-is
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    
+    // If it's a relative path from backend, convert to absolute URL
+    if (url.startsWith("storage/")) {
+      return `http://localhost:8000/${url}`;
+    }
+    
+    // If it starts with a slash, it's already formatted for Next.js
+    if (url.startsWith("/")) return url;
+    
+    // Default fallback - add leading slash
+    return `/${url}`;
   };
 
   const validateFile = (file) => {
@@ -55,24 +78,21 @@ export const ImageUpload = ({
     setUploading(true);
 
     try {
-      // Create preview
+      // Create preview immediately
       const previewUrl = URL.createObjectURL(file);
       setPreview(previewUrl);
 
-      // Simulate upload delay (in real app, this would upload to server)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Store the file for later upload
+      setSelectedFile(file);
 
-      // In real app, you would upload to server and get back URL
-      // For now, we'll use a mock URL based on the file name
-      const mockUploadUrl = `/images/products/${file.name}`;
-
+      // Pass the actual File object to parent component
       if (onChange) {
-        onChange(mockUploadUrl);
+        onChange(file);
       }
     } catch (err) {
-      console.error("Upload failed:", err);
-      setError("Upload failed. Please try again.");
-      if (onError) onError("Upload failed. Please try again.");
+      console.error("File selection failed:", err);
+      setError("Failed to select file. Please try again.");
+      if (onError) onError("Failed to select file. Please try again.");
       setPreview("");
     } finally {
       setUploading(false);
@@ -123,6 +143,8 @@ export const ImageUpload = ({
 
     setPreview("");
     setError("");
+    setSelectedFile(null);
+
     if (onChange) {
       onChange("");
     }
@@ -137,6 +159,9 @@ export const ImageUpload = ({
     if (disabled) return;
     fileInputRef.current?.click();
   };
+
+  // Get the properly formatted image URL
+  const imageUrl = formatImageUrl(preview);
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -166,15 +191,16 @@ export const ImageUpload = ({
           className="hidden"
         />
 
-        {preview ? (
+        {imageUrl ? (
           /* Preview Image */
           <div className="relative w-full h-full group">
             <Image
-              src={preview}
+              src={imageUrl}
               alt="Product preview"
               fill
               className="object-cover rounded-lg"
               sizes="(max-width: 768px) 100vw, 50vw"
+              unoptimized={imageUrl.startsWith("blob:")} // Disable optimization for blob URLs
             />
 
             {/* Overlay with actions */}
@@ -206,7 +232,7 @@ export const ImageUpload = ({
               <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
                 <div className="text-white text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent mx-auto mb-2" />
-                  <p className="text-sm">Uploading...</p>
+                  <p className="text-sm">Processing...</p>
                 </div>
               </div>
             )}
@@ -228,7 +254,7 @@ export const ImageUpload = ({
 
               <div>
                 <h3 className="text-lg font-semibold mb-1">
-                  {uploading ? "Uploading..." : "Upload Product Image"}
+                  {uploading ? "Processing..." : "Upload Product Image"}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-2">
                   Drag and drop an image here, or click to browse

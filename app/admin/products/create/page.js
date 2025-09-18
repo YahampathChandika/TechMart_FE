@@ -29,24 +29,13 @@ function CreateProductPageContent() {
     setError(null);
 
     try {
-      // Prepare product data for API
-      const productData = {
-        name: formData.name,
-        description: formData.description || "",
-        brand: formData.brand,
-        category: formData.category || "",
-        buy_price: parseFloat(formData.buy_price) || 0,
-        sell_price: parseFloat(formData.sell_price) || 0,
-        quantity: parseInt(formData.quantity) || 0,
-        rating: parseFloat(formData.rating) || 0,
-        is_active: formData.is_active !== undefined ? formData.is_active : true,
-        // Note: Image handling would need to be implemented separately
-        // For now, we'll use a placeholder or handle it in the ProductForm component
-      };
+      console.log(
+        "Creating product with data:",
+        formData instanceof FormData ? "FormData with image" : formData
+      );
 
-      console.log("Creating product with data:", productData);
-
-      const result = await authAPI.createProduct(productData);
+      // Pass data directly to API - it handles both FormData and JSON
+      const result = await authAPI.createProduct(formData);
 
       if (!result.success) {
         throw new Error(result.error || "Failed to create product");
@@ -54,7 +43,7 @@ function CreateProductPageContent() {
 
       console.log(SUCCESS_MESSAGES.PRODUCT_CREATED, result.data);
 
-      // Redirect to products list or to the newly created product
+      // Redirect to products list
       router.push("/admin/products");
     } catch (err) {
       console.error("Failed to create product:", err);
