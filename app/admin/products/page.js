@@ -39,18 +39,6 @@ function ProductsPageContent() {
   const canUpdate = canUpdateProducts();
   const canDelete = canDeleteProducts();
 
-  // Check if user can access this page at all
-  if (!canView) {
-    return (
-      <div className="max-w-2xl mx-auto p-6">
-        <ErrorMessage
-          title="Access Denied"
-          message="You don't have permission to access the admin area. Please contact your administrator."
-        />
-      </div>
-    );
-  }
-
   // Load products from backend API
   const loadProducts = async () => {
     setLoading(true);
@@ -213,6 +201,18 @@ function ProductsPageContent() {
     return (
       <div className="flex items-center justify-center min-h-96">
         <LoadingSpinner size="lg" text="Loading products..." />
+      </div>
+    );
+  }
+
+  // Check if user can access this page at all - MOVED AFTER ALL HOOKS
+  if (!canView) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <ErrorMessage
+          title="Access Denied"
+          message="You don't have permission to access the admin area. Please contact your administrator."
+        />
       </div>
     );
   }
