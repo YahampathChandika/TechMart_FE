@@ -239,7 +239,7 @@ export const ProductGrid = ({
 
       {/* Products Grid/List */}
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {displayProducts.map((product) => (
             <ProductCard
               key={product.id}
@@ -266,7 +266,7 @@ export const ProductGrid = ({
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-primary">
-                      ${product.sell_price}
+                      ${product.cost_price}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {product.quantity > 0 ? "In Stock" : "Out of Stock"}

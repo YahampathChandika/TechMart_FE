@@ -177,11 +177,11 @@ export const ProductCard = ({
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-2xl font-bold text-primary">
-                ${product.sell_price}
+                ${product.cost_price}
               </p>
-              {product.cost_price && (
+              {product.sell_price && (
                 <p className="text-sm text-muted-foreground line-through">
-                  ${product.cost_price}
+                  ${product.sell_price}
                 </p>
               )}
             </div>
