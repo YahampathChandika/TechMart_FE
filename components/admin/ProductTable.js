@@ -72,6 +72,27 @@ export const ProductTable = ({
   const canDelete = permissions.canDeleteProducts(user, null);
   const canAdd = permissions.canAddProducts(user, null);
 
+  // Helper function to format image URL
+  const formatImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+
+    // If it's already an absolute URL, return as-is
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+      return imageUrl;
+    }
+
+    // If it's a relative path from backend, convert to absolute URL
+    if (imageUrl.startsWith("storage/")) {
+      return `http://localhost:8000/${imageUrl}`;
+    }
+
+    // If it starts with a slash, it's already formatted for Next.js
+    if (imageUrl.startsWith("/")) return imageUrl;
+
+    // Default fallback - add leading slash
+    return `/${imageUrl}`;
+  };
+
   // Filter and sort products
   const filteredProducts = products
     .filter((product) => {
@@ -345,6 +366,10 @@ export const ProductTable = ({
               ) : (
                 filteredProducts.map((product) => {
                   const stockStatus = getStockStatus(product);
+                  const imageUrl = formatImageUrl(
+                    product.image_url || product.image_path
+                  );
+
                   return (
                     <tr key={product.id} className="border-b hover:bg-muted/50">
                       <td className="p-3">
@@ -360,7 +385,26 @@ export const ProductTable = ({
                       <td className="p-3">
                         <div className="flex items-center space-x-3">
                           <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center overflow-hidden">
-                            <Package className="h-6 w-6 text-muted-foreground" />
+                            {imageUrl ? (
+                              <Image
+                                src={imageUrl}
+                                alt={product.name}
+                                width={48}
+                                height={48}
+                                className="object-cover w-full h-full"
+                                onError={(e) => {
+                                  // Fallback to package icon if image fails to load
+                                  e.target.style.display = "none";
+                                  e.target.nextSibling.style.display = "block";
+                                }}
+                              />
+                            ) : null}
+                            <Package
+                              className={cn(
+                                "h-6 w-6 text-muted-foreground",
+                                imageUrl && "hidden"
+                              )}
+                            />
                           </div>
                           <div>
                             <h4 className="font-medium text-sm line-clamp-1">

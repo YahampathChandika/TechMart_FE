@@ -32,21 +32,21 @@ export const ImageUpload = ({
   // Helper function to format image URL for Next.js Image component
   const formatImageUrl = (url) => {
     if (!url) return "";
-    
+
     // If it's already a blob URL (for previews), return as-is
     if (url.startsWith("blob:")) return url;
-    
+
     // If it's already an absolute URL, return as-is
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    
+
     // If it's a relative path from backend, convert to absolute URL
     if (url.startsWith("storage/")) {
       return `http://localhost:8000/${url}`;
     }
-    
+
     // If it starts with a slash, it's already formatted for Next.js
     if (url.startsWith("/")) return url;
-    
+
     // Default fallback - add leading slash
     return `/${url}`;
   };
