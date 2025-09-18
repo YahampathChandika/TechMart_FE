@@ -52,7 +52,9 @@ export const AdminLayout = ({
 
   return (
     <AdminGuard>
-      <div className="flex h-screen bg-background overflow-hidden">
+      <div className="flex h-screen bg-background overflow-hidden min-h-screen">
+        {" "}
+        {/* Added min-h-screen */}
         {/* Desktop Sidebar */}
         <div className="hidden lg:flex">
           <AdminSidebar
@@ -60,22 +62,19 @@ export const AdminLayout = ({
             onToggle={toggleSidebar}
           />
         </div>
-
         {/* Mobile Sidebar Overlay */}
         {mobileMenuOpen && (
           <>
             <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" />
-            <div className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden">
+            <div className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden h-full">
               <AdminSidebar isCollapsed={false} onToggle={toggleMobileMenu} />
             </div>
           </>
         )}
-
         {/* Main Content Area */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
           {/* Top Navigation */}
           <AdminNavbar onMenuClick={toggleMobileMenu} showSearch={showSearch} />
-
           {/* Page Content */}
           <main className="flex-1 overflow-y-auto">
             <div className={cn("p-6", className)}>
