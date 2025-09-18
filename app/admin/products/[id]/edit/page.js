@@ -164,7 +164,7 @@ function EditProductPageContent({ productId }) {
       <div>
         <h1 className="text-3xl font-bold">Edit Product</h1>
         <p className="text-muted-foreground">
-          Update information for "{product.name}"
+          Update information for &quot;{product.name}&quot;
         </p>
       </div>
 

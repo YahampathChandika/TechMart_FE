@@ -110,7 +110,7 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
             Registration Successful!
           </h2>
           <p className="text-green-700 dark:text-green-300 mb-4">
-            Your account has been created and you're now logged in.
+            Your account has been created and you&apos;re now logged in.
           </p>
           <p className="text-sm text-green-600 dark:text-green-400">
             Redirecting to homepage...
