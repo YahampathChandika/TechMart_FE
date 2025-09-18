@@ -32,7 +32,6 @@ import { cn } from "@/lib/utils";
 
 export const UserTable = ({
   users = [],
-  userPrivileges = [],
   loading = false,
   error = null,
   onEdit = null,
@@ -70,11 +69,6 @@ export const UserTable = ({
 
   // Safe data access helpers
   const safeUsers = Array.isArray(users) ? users : [];
-
-  // Helper function to get user privileges
-  const getUserPrivileges = (userId) => {
-    return userPrivileges.find((priv) => priv.user_id === userId);
-  };
 
   // Filter and sort users
   const filteredUsers = safeUsers
@@ -198,10 +192,12 @@ export const UserTable = ({
   };
 
   const renderPrivilegesSummary = (user) => {
-    const privileges = getUserPrivileges(user?.id);
+    // Get privileges directly from user object
+    const privileges = user?.privileges;
+
     if (!privileges || user?.role === "admin") {
       return user?.role === "admin" ? (
-        <span className="text-xs text-green-600">Full Access</span>
+        <span className="text-xs text-green-600 font-medium">Full Access</span>
       ) : (
         <span className="text-xs text-muted-foreground">No privileges set</span>
       );
@@ -213,12 +209,16 @@ export const UserTable = ({
       privileges.can_delete_products && "Delete",
     ].filter(Boolean);
 
+    if (activePrivileges.length === 0) {
+      return <span className="text-xs text-orange-600">Read-only</span>;
+    }
+
     return (
-      <span className="text-xs text-muted-foreground">
-        {activePrivileges.length > 0
-          ? activePrivileges.join(", ")
-          : "Read-only"}
-      </span>
+      <div className="space-y-1">
+        <span className="text-xs font-medium text-blue-600">
+          {activePrivileges.join(", ")}
+        </span>
+      </div>
     );
   };
 
@@ -432,11 +432,7 @@ export const UserTable = ({
                         {user.role === "admin" ? "Administrator" : "User"}
                       </span>
                     </td>
-                    <td className="p-3">
-                      <div className="space-y-1">
-                        {renderPrivilegesSummary(user)}
-                      </div>
-                    </td>
+                    <td className="p-3">{renderPrivilegesSummary(user)}</td>
                     <td className="p-3">
                       <div className="flex items-center space-x-2">
                         <div
@@ -459,19 +455,6 @@ export const UserTable = ({
                           <Link href={`/admin/users/${user.id}/edit`}>
                             <Button variant="ghost" size="sm" className="p-2">
                               <Edit className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        )}
-
-                        {canManagePrivileges(user) && (
-                          <Link href={`/admin/users/${user.id}/privileges`}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="p-2"
-                              title="Manage Privileges"
-                            >
-                              <Shield className="h-4 w-4" />
                             </Button>
                           </Link>
                         )}
@@ -508,6 +491,19 @@ export const UserTable = ({
                               <Trash2 className="h-4 w-4" />
                             )}
                           </Button>
+                        )}
+
+                        {canManagePrivileges(user) && (
+                          <Link href={`/admin/users/${user.id}/privileges`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2"
+                              title="Manage Privileges"
+                            >
+                              <Shield className="h-4 w-4" />
+                            </Button>
+                          </Link>
                         )}
                       </div>
                     </td>

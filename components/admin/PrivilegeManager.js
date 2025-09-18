@@ -1,7 +1,7 @@
 // components/admin/PrivilegeManager.js
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import {
@@ -47,13 +47,28 @@ export const PrivilegeManager = ({
     watch,
     formState: { errors, isDirty, isSubmitting },
     reset,
-  } = useForm({
-    defaultValues: {
-      can_add_products: userPrivileges?.can_add_products || false,
-      can_update_products: userPrivileges?.can_update_products || false,
-      can_delete_products: userPrivileges?.can_delete_products || false,
-    },
-  });
+    setValue,
+  } = useForm();
+
+  // Update form values when userPrivileges changes
+  useEffect(() => {
+    if (userPrivileges) {
+      setValue("can_add_products", userPrivileges.can_add_products || false);
+      setValue(
+        "can_update_products",
+        userPrivileges.can_update_products || false
+      );
+      setValue(
+        "can_delete_products",
+        userPrivileges.can_delete_products || false
+      );
+    } else {
+      // Set default values if no privileges data
+      setValue("can_add_products", false);
+      setValue("can_update_products", false);
+      setValue("can_delete_products", false);
+    }
+  }, [userPrivileges, setValue]);
 
   const watchedFields = watch();
 

@@ -56,15 +56,17 @@ function UserPrivilegesPageContent({ userId }) {
 
         setUser(userData);
 
-        // TODO: Load user privileges when API endpoint is available
-        // For now, set empty privileges - this should be replaced when backend implements privileges API
-        // const privilegesResponse = await authAPI.getUserPrivileges(userId);
-        // setUserPrivileges(privilegesResponse.data);
-        setUserPrivileges({
-          can_add_products: false,
-          can_update_products: false,
-          can_delete_products: false,
-        });
+        // Get privileges directly from user data (already loaded in backend)
+        if (userData.privileges) {
+          setUserPrivileges(userData.privileges);
+        } else {
+          // Set default privileges if none exist
+          setUserPrivileges({
+            can_add_products: false,
+            can_update_products: false,
+            can_delete_products: false,
+          });
+        }
       } catch (err) {
         console.error("Failed to load user data:", err);
         setError("Failed to load user data. Please try again.");
@@ -90,21 +92,20 @@ function UserPrivilegesPageContent({ userId }) {
     setSubmitting(true);
 
     try {
-      // TODO: Replace with real API call when privileges endpoint is implemented
-      // const response = await authAPI.updateUserPrivileges(user.id, formData);
+      // Make actual API call to update privileges
+      const response = await authAPI.updateUserPrivileges(user.id, formData);
 
-      // Temporary placeholder - simulate API success
-      const updatedPrivileges = {
-        ...userPrivileges,
-        ...formData,
-        user_id: user.id,
-        updated_at: new Date().toISOString(),
-      };
+      if (!response.success) {
+        throw new Error(response.error || "Failed to update privileges");
+      }
 
-      setUserPrivileges(updatedPrivileges);
-      console.log("User privileges updated successfully:", updatedPrivileges);
+      // Update local state with the updated user data from response
+      if (response.data && response.data.privileges) {
+        setUserPrivileges(response.data.privileges);
+        setUser(response.data);
+      }
 
-      // Redirect will be handled by PrivilegeManager component
+      console.log("User privileges updated successfully");
     } catch (err) {
       console.error("Failed to update privileges:", err);
       throw err;
