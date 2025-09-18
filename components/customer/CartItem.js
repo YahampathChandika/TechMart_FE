@@ -20,6 +20,25 @@ export const CartItem = ({ item }) => {
   const isOutOfStock = product?.quantity === 0;
   const exceedsStock = item.quantity > (product?.quantity || 0);
 
+  // Helper function to format image URL for Next.js Image component
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+
+    // If it's already an absolute URL, return as-is
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+
+    // If it's a relative path from backend, convert to absolute URL
+    if (url.startsWith("storage/")) {
+      return `http://localhost:8000/${url}`;
+    }
+
+    // If it starts with a slash, it's already formatted for Next.js
+    if (url.startsWith("/")) return url;
+
+    // Default fallback - add leading slash
+    return `/${url}`;
+  };
+
   const handleQuantityChange = async (newQuantity) => {
     if (newQuantity < 1) return;
 
@@ -60,18 +79,22 @@ export const CartItem = ({ item }) => {
     );
   }
 
+  // Get the properly formatted image URL
+  const imageUrl = formatImageUrl(product.image_url || product.image_path);
+
   return (
     <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-card">
       {/* Product Image */}
       <div className="w-full sm:w-32 h-32 flex-shrink-0">
         <div className="relative w-full h-full rounded-lg overflow-hidden bg-muted">
-          {!imageError && product.image_path ? (
+          {!imageError && imageUrl ? (
             <Image
-              src={product.image_path}
+              src={imageUrl}
               alt={product.name}
               fill
               className="object-cover"
               onError={() => setImageError(true)}
+              sizes="128px"
             />
           ) : (
             <div className="flex items-center justify-center w-full h-full">
@@ -201,7 +224,27 @@ export const CartItem = ({ item }) => {
 // Compact version for mini cart
 export const CartItemCompact = ({ item, onClose }) => {
   const { updateCartItem, removeFromCart } = useCart();
+  const [imageError, setImageError] = useState(false);
   const product = item.product;
+
+  // Helper function to format image URL for Next.js Image component
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+
+    // If it's already an absolute URL, return as-is
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+
+    // If it's a relative path from backend, convert to absolute URL
+    if (url.startsWith("storage/")) {
+      return `http://localhost:8000/${url}`;
+    }
+
+    // If it starts with a slash, it's already formatted for Next.js
+    if (url.startsWith("/")) return url;
+
+    // Default fallback - add leading slash
+    return `/${url}`;
+  };
 
   const handleQuantityChange = async (newQuantity) => {
     if (newQuantity < 1) {
@@ -214,10 +257,24 @@ export const CartItemCompact = ({ item, onClose }) => {
 
   if (!product) return null;
 
+  // Get the properly formatted image URL
+  const imageUrl = formatImageUrl(product.image_url || product.image_path);
+
   return (
     <div className="flex items-center gap-3 p-3 border-b">
-      <div className="w-12 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0">
-        <Package className="h-6 w-6 text-muted-foreground" />
+      <div className="w-12 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+        {!imageError && imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={product.name}
+            width={48}
+            height={48}
+            className="object-cover w-full h-full"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <Package className="h-6 w-6 text-muted-foreground" />
+        )}
       </div>
 
       <div className="flex-1 min-w-0">

@@ -34,6 +34,25 @@ export const ProductDetails = ({ product, className = "" }) => {
   const cartQuantity = getProductQuantityInCart(product.id);
   const inCart = isInCart(product.id);
 
+  // Helper function to format image URL for Next.js Image component
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+
+    // If it's already an absolute URL, return as-is
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+
+    // If it's a relative path from backend, convert to absolute URL
+    if (url.startsWith("storage/")) {
+      return `http://localhost:8000/${url}`;
+    }
+
+    // If it starts with a slash, it's already formatted for Next.js
+    if (url.startsWith("/")) return url;
+
+    // Default fallback - add leading slash
+    return `/${url}`;
+  };
+
   const handleAddToCart = async () => {
     if (!isCustomer()) return;
 
@@ -96,8 +115,11 @@ export const ProductDetails = ({ product, className = "" }) => {
     },
   ];
 
+  // Get properly formatted image URL
+  const mainImageUrl = formatImageUrl(product.image_url || product.image_path);
+
   // Placeholder for multiple images (in real app, product would have image array)
-  const images = [product.image_path];
+  const images = mainImageUrl ? [mainImageUrl] : [];
 
   return (
     <div className={cn("", className)}>
@@ -135,7 +157,7 @@ export const ProductDetails = ({ product, className = "" }) => {
         <div className="space-y-4">
           {/* Main Image */}
           <div className="aspect-square relative overflow-hidden rounded-lg bg-muted border">
-            {!imageError ? (
+            {!imageError && mainImageUrl ? (
               <Image
                 src={images[selectedImage]}
                 alt={product.name}

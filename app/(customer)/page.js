@@ -1,18 +1,21 @@
 // app/(customer)/page.js
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Star, Package, Truck, Shield, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeaturedProductGrid } from "@/components/customer/ProductGrid";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
-import { usePublicProducts } from "@/hooks/useProducts"; // FIXED: Use public products hook
+import { usePublicProducts } from "@/hooks/useProducts";
 
 export default function CustomerHomepage() {
   const { isCustomer, customer } = useAuth();
+  const [imageErrors, setImageErrors] = useState({});
 
-  // FIXED: Get featured products using public endpoint
+  // Get featured products using public endpoint
   const {
     products: featuredProducts,
     loading: featuredLoading,
@@ -23,7 +26,7 @@ export default function CustomerHomepage() {
     per_page: 6,
   });
 
-  // FIXED: Get new arrivals using public endpoint
+  // Get new arrivals using public endpoint
   const {
     products: newArrivals,
     loading: newLoading,
@@ -32,6 +35,24 @@ export default function CustomerHomepage() {
     sort: "newest",
     per_page: 3,
   });
+
+  // Helper function to format image URL
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    if (url.startsWith("storage/")) {
+      return `http://localhost:8000/${url}`;
+    }
+    if (url.startsWith("/")) return url;
+    return `/${url}`;
+  };
+
+  const handleImageError = (productId) => {
+    setImageErrors((prev) => ({
+      ...prev,
+      [productId]: true,
+    }));
+  };
 
   const benefits = [
     {
@@ -181,42 +202,49 @@ export default function CustomerHomepage() {
           />
         ) : newArrivals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {newArrivals.map((product) => (
-              <div key={product.id} className="group">
-                <Link href={`/products/${product.id}`}>
-                  <div className="relative aspect-square mb-4 overflow-hidden rounded-lg bg-muted border">
-                    <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
-                      New
+            {newArrivals.map((product) => {
+              const imageUrl = formatImageUrl(
+                product.image_url || product.image_path
+              );
+              const hasImageError = imageErrors[product.id];
+
+              return (
+                <div key={product.id} className="group">
+                  <Link href={`/products/${product.id}`}>
+                    <div className="relative aspect-square mb-4 overflow-hidden rounded-lg bg-muted border">
+                      <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium z-10">
+                        New
+                      </div>
+                      {!hasImageError && imageUrl ? (
+                        <Image
+                          src={imageUrl}
+                          alt={product.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform"
+                          onError={() => handleImageError(product.id)}
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center group-hover:scale-105 transition-transform">
+                          <Package className="h-16 w-16 text-muted-foreground" />
+                        </div>
+                      )}
                     </div>
-                    {product.image_path ? (
-                      <img
-                        src={product.image_path}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.nextSibling.style.display = "flex";
-                        }}
-                      />
-                    ) : null}
-                    <div className="flex h-full items-center justify-center group-hover:scale-105 transition-transform">
-                      <Package className="h-16 w-16 text-muted-foreground" />
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        {product.brand}
+                      </p>
+                      <h3 className="font-semibold group-hover:text-primary transition-colors">
+                        {product.name}
+                      </h3>
+                      <p className="text-lg font-bold text-primary">
+                        ${product.sell_price}
+                      </p>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      {product.brand}
-                    </p>
-                    <h3 className="font-semibold group-hover:text-primary transition-colors">
-                      {product.name}
-                    </h3>
-                    <p className="text-lg font-bold text-primary">
-                      ${product.sell_price}
-                    </p>
-                  </div>
-                </Link>
-              </div>
-            ))}
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-8">

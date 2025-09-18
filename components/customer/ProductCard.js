@@ -28,6 +28,27 @@ export const ProductCard = ({
   const [adding, setAdding] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  console.log("ProductCard:", product);
+
+  // Helper function to format image URL for Next.js Image component
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+
+    // If it's already an absolute URL, return as-is
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+
+    // If it's a relative path from backend, convert to absolute URL
+    if (url.startsWith("storage/")) {
+      return `http://localhost:8000/${url}`;
+    }
+
+    // If it starts with a slash, it's already formatted for Next.js
+    if (url.startsWith("/")) return url;
+
+    // Default fallback - add leading slash
+    return `/${url}`;
+  };
+
   const handleAddToCart = async (e) => {
     e.preventDefault(); // Prevent link navigation
     e.stopPropagation();
@@ -79,6 +100,9 @@ export const ProductCard = ({
   const cartQuantity = getProductQuantityInCart(product.id);
   const isOutOfStock = product.quantity === 0;
 
+  // Get the properly formatted image URL
+  const imageUrl = formatImageUrl(product.image_url || product.image_path);
+
   return (
     <div
       className={cn(
@@ -95,9 +119,9 @@ export const ProductCard = ({
             imageSizes[size]
           )}
         >
-          {!imageError && product.image_path ? (
+          {!imageError && imageUrl ? (
             <Image
-              src={product.image_path}
+              src={imageUrl}
               alt={product.name}
               fill
               className="object-cover transition-transform group-hover:scale-105"
