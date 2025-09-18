@@ -1,4 +1,4 @@
-// app/(customer)/products/page.js - Fixed with Suspense boundary
+// app/(customer)/products/page.js - Fixed with proper shadcn Select component
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
@@ -8,6 +8,13 @@ import { SearchFilters } from "@/components/customer/SearchFilters";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, Filter, X } from "lucide-react";
 import { usePublicProducts } from "@/hooks/useProducts";
 import { useBrands, useFilterOptions } from "@/hooks/useBrands";
@@ -125,7 +132,6 @@ function ProductsPageContent() {
         <div className="hidden lg:block w-80 flex-shrink-0">
           <div className="sticky top-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Filters</h2>
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
@@ -169,9 +175,7 @@ function ProductsPageContent() {
               </Button>
 
               {/* Results count */}
-              {loading ? (
-                <p className="text-muted-foreground">Loading products...</p>
-              ) : meta ? (
+              {meta ? (
                 <p className="text-muted-foreground">
                   Showing {meta.from}-{meta.to} of {meta.total} products
                 </p>
@@ -179,20 +183,21 @@ function ProductsPageContent() {
             </div>
 
             {/* Sort Dropdown */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Sort by:</label>
-              <select
-                value={filters.sort}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="px-3 py-1 border rounded-md text-sm bg-background"
-              >
-                <option value="name">Name</option>
-                <option value="price_low">Price: Low to High</option>
-                <option value="price_high">Price: High to Low</option>
-                <option value="rating">Rating</option>
-                <option value="newest">Newest First</option>
-                <option value="popular">Most Popular</option>
-              </select>
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <label className="text-sm text-muted-foreground w-1/4">Sort by:</label>
+              <Select value={filters.sort} onValueChange={handleSortChange}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <SelectValue placeholder="Sort by..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="price_low">Price: Low to High</SelectItem>
+                  <SelectItem value="price_high">Price: High to Low</SelectItem>
+                  <SelectItem value="rating">Rating</SelectItem>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="popular">Most Popular</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

@@ -304,9 +304,9 @@ export const Header = () => {
                 >
                   <Link href={ROUTES.LOGIN}>Sign In</Link>
                 </Button>
-                <Button size="sm" className="font-medium" asChild>
+                {/* <Button size="sm" className="font-medium" asChild>
                   <Link href={ROUTES.REGISTER}>Get Started</Link>
-                </Button>
+                </Button> */}
               </div>
             )}
 
@@ -442,14 +442,14 @@ export const Header = () => {
                         Sign In
                       </Link>
                     </Button>
-                    <Button size="sm" className="w-full font-medium" asChild>
+                    {/* <Button size="sm" className="hiddenw-full font-medium" asChild>
                       <Link
                         href={ROUTES.REGISTER}
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Get Started
                       </Link>
-                    </Button>
+                    </Button> */}
                   </div>
                 ) : (
                   <Button
