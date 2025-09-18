@@ -8,7 +8,7 @@ import { PageLoadingSpinner } from "@/components/common";
 
 function AdminLoginPageContent() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 px-4">
       <div className="w-full max-w-md">
         <div className="bg-card border shadow-xl rounded-lg p-6">
           <Suspense fallback={<PageLoadingSpinner />}>
@@ -18,7 +18,7 @@ function AdminLoginPageContent() {
 
         {/* Admin Login Info */}
         <div className="mt-6 text-center">
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
               Admin & Staff Access
             </h3>

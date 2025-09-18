@@ -13,6 +13,8 @@ import {
   Settings,
   Star,
   ChevronDown,
+  Home,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -78,23 +80,25 @@ export const Header = () => {
               <>
                 <Link
                   href={ROUTES.HOME}
-                  className={`text-sm font-medium transition-colors hover:text-primary relative py-2 ${
+                  className={`text-sm font-medium transition-colors hover:text-primary relative py-2 flex items-center space-x-1 ${
                     pathname === ROUTES.HOME
                       ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full"
                       : "text-foreground/80"
                   }`}
                 >
-                  Home
+                  <Home className="h-4 w-4" />
+                  <span>Home</span>
                 </Link>
                 <Link
                   href={ROUTES.PRODUCTS}
-                  className={`text-sm font-medium transition-colors hover:text-primary relative py-2 ${
+                  className={`text-sm font-medium transition-colors hover:text-primary relative py-2 flex items-center space-x-1 ${
                     pathname === ROUTES.PRODUCTS
                       ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full"
                       : "text-foreground/80"
                   }`}
                 >
-                  Products
+                  <Package className="h-4 w-4" />
+                  <span>Products</span>
                 </Link>
                 {/* Admin Dashboard Link for Admins/Staff */}
                 {(isAdmin() || isUser()) && (
@@ -118,13 +122,14 @@ export const Header = () => {
                 </Link>
                 <Link
                   href={ROUTES.ADMIN_DASHBOARD}
-                  className={`text-sm font-medium transition-colors hover:text-primary relative py-2 ${
+                  className={`text-sm font-medium transition-colors hover:text-primary relative py-2 flex items-center space-x-1 ${
                     pathname === ROUTES.ADMIN_DASHBOARD
                       ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full"
                       : "text-foreground/80"
                   }`}
                 >
-                  Dashboard
+                  <Settings className="h-4 w-4" />
+                  <span>Dashboard</span>
                 </Link>
               </>
             )}
@@ -321,9 +326,9 @@ export const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - Fixed z-index issue */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t bg-background/95 backdrop-blur">
+          <div className="lg:hidden absolute left-0 right-0 top-full z-[100] border-b bg-background shadow-lg">
             <div className="px-4 py-4 space-y-3">
               {/* Mobile Navigation */}
               <nav className="space-y-1">
@@ -338,6 +343,7 @@ export const Header = () => {
                       }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
+                      <Home className="mr-3 h-4 w-4" />
                       Home
                     </Link>
                     <Link
@@ -349,6 +355,7 @@ export const Header = () => {
                       }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
+                      <Package className="mr-3 h-4 w-4" />
                       Products
                     </Link>
                     {/* Admin Dashboard Link for Mobile */}
@@ -358,7 +365,7 @@ export const Header = () => {
                         className="flex items-center py-3 px-2 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        <Settings className="mr-2 h-4 w-4" />
+                        <Settings className="mr-3 h-4 w-4" />
                         Admin Panel
                       </Link>
                     )}
@@ -370,7 +377,7 @@ export const Header = () => {
                       className="flex items-center py-3 px-2 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <Star className="mr-2 h-4 w-4" />
+                      <Star className="mr-3 h-4 w-4" />
                       Storefront
                     </Link>
                     <Link
@@ -382,7 +389,7 @@ export const Header = () => {
                       }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <Settings className="mr-2 h-4 w-4" />
+                      <Settings className="mr-3 h-4 w-4" />
                       Dashboard
                     </Link>
                   </>
@@ -396,7 +403,10 @@ export const Header = () => {
                       className="flex items-center justify-between py-3 px-2 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <span>Shopping Cart</span>
+                      <div className="flex items-center">
+                        <ShoppingCart className="mr-3 h-4 w-4" />
+                        <span>Shopping Cart</span>
+                      </div>
                       {cartCount > 0 && (
                         <Badge variant="secondary" className="text-xs">
                           {cartCount}
@@ -408,6 +418,7 @@ export const Header = () => {
                       className="flex items-center py-3 px-2 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
+                      <User className="mr-3 h-4 w-4" />
                       Profile Settings
                     </Link>
                   </>

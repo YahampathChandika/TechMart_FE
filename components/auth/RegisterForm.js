@@ -327,33 +327,6 @@ export const RegisterForm = ({ className = "", onSuccess = null }) => {
           </Button>
         </p>
       </div>
-
-      {/* DEBUG: Development error info */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="mt-4 text-xs text-muted-foreground">
-          <details>
-            <summary>Debug Info (Dev Only)</summary>
-            <div className="mt-2 p-2 bg-muted rounded text-xs space-y-1">
-              <div>
-                <strong>Form Errors:</strong>
-              </div>
-              {Object.entries(errors).map(([field, error]) => (
-                <div key={field}>
-                  • {field}: {error?.message || "No message"}
-                </div>
-              ))}
-              {Object.keys(errors).length === 0 && (
-                <div className="text-muted-foreground">No form errors</div>
-              )}
-              {error && (
-                <div className="mt-2">
-                  <strong>General Error:</strong> {error}
-                </div>
-              )}
-            </div>
-          </details>
-        </div>
-      )}
     </div>
   );
 };

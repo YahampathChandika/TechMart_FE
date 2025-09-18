@@ -255,42 +255,6 @@ export default function CustomerHomepage() {
           </div>
         )}
       </section>
-
-      {/* Categories */}
-      <section className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Shop by Category</h2>
-          <p className="text-muted-foreground">
-            Browse our wide selection of electronics
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            {
-              name: "Smartphones",
-              href: "/products?brand=Apple,Samsung",
-              icon: "📱",
-            },
-            { name: "Laptops", href: "/products?category=laptop", icon: "💻" },
-            { name: "Audio", href: "/products?category=audio", icon: "🎧" },
-            { name: "Gaming", href: "/products?category=gaming", icon: "🎮" },
-          ].map((category) => (
-            <Link
-              key={category.name}
-              href={category.href}
-              className="group p-6 bg-background border rounded-lg hover:shadow-md transition-shadow"
-            >
-              <div className="text-center">
-                <div className="text-4xl mb-4">{category.icon}</div>
-                <h3 className="font-semibold group-hover:text-primary transition-colors">
-                  {category.name}
-                </h3>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
