@@ -1,4 +1,4 @@
-// app/(customer)/products/page.js - Fixed with proper shadcn Select component
+// app/(customer)/products/page.js - Updated with shadcn Sheet for mobile filters
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
@@ -15,7 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, X } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
+import { Search, Filter, X, SlidersHorizontal } from "lucide-react";
 import { usePublicProducts } from "@/hooks/useProducts";
 import { useBrands, useFilterOptions } from "@/hooks/useBrands";
 
@@ -24,7 +33,7 @@ function ProductsPageContent() {
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || ""
   );
-  const [showFilters, setShowFilters] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [filters, setFilters] = useState({
     brand: searchParams.get("brand") || "",
     min_price: searchParams.get("min_price") || "",
@@ -85,6 +94,7 @@ function ProductsPageContent() {
       per_page: 12,
     });
     setSearchQuery("");
+    setShowMobileFilters(false);
   }, []);
 
   // Handle page change
@@ -128,7 +138,7 @@ function ProductsPageContent() {
       </div>
 
       <div className="flex gap-8">
-        {/* Sidebar Filters */}
+        {/* Desktop Sidebar Filters */}
         <div className="hidden lg:block w-80 flex-shrink-0">
           <div className="sticky top-4">
             <div className="flex items-center justify-between mb-4">
@@ -160,23 +170,85 @@ function ProductsPageContent() {
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          {/* Mobile Filters Toggle & Sort Dropdown */}
+          {/* Mobile Filters Sheet & Sort Dropdown */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div className="flex items-center gap-4">
-              {/* Mobile Filter Toggle */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="lg:hidden"
+              {/* Mobile Filter Sheet */}
+              <Sheet
+                open={showMobileFilters}
+                onOpenChange={setShowMobileFilters}
               >
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-              </Button>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="lg:hidden">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    Filters
+                    {hasActiveFilters && (
+                      <span className="ml-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
+                        {
+                          Object.keys(filters).filter(
+                            (key) =>
+                              key !== "sort" &&
+                              key !== "per_page" &&
+                              key !== "page" &&
+                              filters[key]
+                          ).length
+                        }
+                      </span>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <SlidersHorizontal className="h-5 w-5" />
+                      Filter Products
+                    </SheetTitle>
+                  </SheetHeader>
+
+                  <div className="mt-6">
+                    {/* Clear Filters Button */}
+                    {hasActiveFilters && (
+                      <div className="flex justify-end mb-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleClearFilters}
+                          className="text-sm text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Clear All Filters
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Filter Content */}
+                    {brandsLoading || filtersLoading ? (
+                      <div className="flex justify-center py-8">
+                        <LoadingSpinner />
+                      </div>
+                    ) : (
+                      <SearchFilters
+                        filters={filters}
+                        availableFilters={availableFilters}
+                        onChange={handleFilterChange}
+                      />
+                    )}
+
+                    {/* Apply Filters Button */}
+                    <div className="mt-6 pt-6 border-t">
+                      <SheetClose asChild>
+                        <Button className="w-full" size="lg">
+                          Apply Filters
+                        </Button>
+                      </SheetClose>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
 
               {/* Results count */}
               {meta ? (
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Showing {meta.from}-{meta.to} of {meta.total} products
                 </p>
               ) : null}
@@ -184,7 +256,9 @@ function ProductsPageContent() {
 
             {/* Sort Dropdown */}
             <div className="flex items-center gap-2 w-full md:w-auto">
-              <label className="text-sm text-muted-foreground w-1/4">Sort by:</label>
+              <label className="text-sm text-muted-foreground whitespace-nowrap">
+                Sort by:
+              </label>
               <Select value={filters.sort} onValueChange={handleSortChange}>
                 <SelectTrigger className="w-full md:w-[180px]">
                   <SelectValue placeholder="Sort by..." />
@@ -201,30 +275,47 @@ function ProductsPageContent() {
             </div>
           </div>
 
-          {/* Mobile Filters */}
-          {showFilters && (
-            <div className="lg:hidden mb-6 p-4 border rounded-lg bg-background">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Filters</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowFilters(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              {brandsLoading || filtersLoading ? (
-                <div className="flex justify-center py-4">
-                  <LoadingSpinner />
-                </div>
-              ) : (
-                <SearchFilters
-                  filters={filters}
-                  availableFilters={availableFilters}
-                  onChange={handleFilterChange}
-                />
-              )}
+          {/* Active Filters Display (Mobile) */}
+          {hasActiveFilters && (
+            <div className="lg:hidden mb-4 flex flex-wrap gap-2">
+              {Object.entries(filters).map(([key, value]) => {
+                if (
+                  key === "sort" ||
+                  key === "per_page" ||
+                  key === "page" ||
+                  !value
+                )
+                  return null;
+
+                let displayValue = value;
+                if (key === "brand") {
+                  const brand = brands?.find((b) => b.id.toString() === value);
+                  displayValue = brand?.name || value;
+                } else if (key === "in_stock") {
+                  displayValue = "In Stock";
+                } else if (key === "min_price") {
+                  displayValue = `Min: $${value}`;
+                } else if (key === "max_price") {
+                  displayValue = `Max: $${value}`;
+                } else if (key === "rating") {
+                  displayValue = `${value}+ Stars`;
+                }
+
+                return (
+                  <div
+                    key={key}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-xs"
+                  >
+                    <span>{displayValue}</span>
+                    <button
+                      onClick={() => handleFilterChange({ [key]: "" })}
+                      className="hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
