@@ -9,11 +9,7 @@ import { UserManagementLayout } from "@/components/admin/AdminLayout";
 import { PrivilegeManager } from "@/components/admin/PrivilegeManager";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
-import {
-  getUserById,
-  getUserPrivileges,
-  mockUserPrivileges,
-} from "@/lib/mockData";
+import { authAPI } from "@/lib/api";
 import { SUCCESS_MESSAGES } from "@/lib/constants";
 
 function UserPrivilegesPageContent({ userId }) {
@@ -35,11 +31,14 @@ function UserPrivilegesPageContent({ userId }) {
       setError(null);
 
       try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        // Load user data
+        const userResponse = await authAPI.getUser(userId);
 
-        // Get user from mock data
-        const userData = getUserById(parseInt(userId));
+        if (!userResponse.success) {
+          throw new Error(userResponse.error || "Failed to load user");
+        }
+
+        const userData = userResponse.data;
 
         if (!userData) {
           notFound();
@@ -55,11 +54,17 @@ function UserPrivilegesPageContent({ userId }) {
           return;
         }
 
-        // Get user privileges
-        const privileges = getUserPrivileges(parseInt(userId));
-
         setUser(userData);
-        setUserPrivileges(privileges);
+
+        // TODO: Load user privileges when API endpoint is available
+        // For now, set empty privileges - this should be replaced when backend implements privileges API
+        // const privilegesResponse = await authAPI.getUserPrivileges(userId);
+        // setUserPrivileges(privilegesResponse.data);
+        setUserPrivileges({
+          can_add_products: false,
+          can_update_products: false,
+          can_delete_products: false,
+        });
       } catch (err) {
         console.error("Failed to load user data:", err);
         setError("Failed to load user data. Please try again.");
@@ -85,11 +90,10 @@ function UserPrivilegesPageContent({ userId }) {
     setSubmitting(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // TODO: Replace with real API call when privileges endpoint is implemented
+      // const response = await authAPI.updateUserPrivileges(user.id, formData);
 
-      // In real app, this would be an API call
-      // For now, update in mock data
+      // Temporary placeholder - simulate API success
       const updatedPrivileges = {
         ...userPrivileges,
         ...formData,
@@ -97,24 +101,8 @@ function UserPrivilegesPageContent({ userId }) {
         updated_at: new Date().toISOString(),
       };
 
-      // If privileges don't exist, create them
-      if (!userPrivileges) {
-        updatedPrivileges.id =
-          Math.max(...mockUserPrivileges.map((p) => p.id)) + 1;
-        updatedPrivileges.created_at = new Date().toISOString();
-        mockUserPrivileges.push(updatedPrivileges);
-      } else {
-        // Update existing privileges
-        const index = mockUserPrivileges.findIndex(
-          (p) => p.user_id === user.id
-        );
-        if (index !== -1) {
-          mockUserPrivileges[index] = updatedPrivileges;
-        }
-      }
-
       setUserPrivileges(updatedPrivileges);
-      console.log(SUCCESS_MESSAGES.PRIVILEGES_UPDATED, updatedPrivileges);
+      console.log("User privileges updated successfully:", updatedPrivileges);
 
       // Redirect will be handled by PrivilegeManager component
     } catch (err) {

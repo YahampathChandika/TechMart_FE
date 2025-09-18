@@ -68,29 +68,40 @@ export const UserTable = ({
 
   const [actionTarget, setActionTarget] = useState(null);
 
+  // Safe data access helpers
+  const safeUsers = Array.isArray(users) ? users : [];
+
   // Helper function to get user privileges
   const getUserPrivileges = (userId) => {
     return userPrivileges.find((priv) => priv.user_id === userId);
   };
 
   // Filter and sort users
-  const filteredUsers = users
+  const filteredUsers = safeUsers
     .filter((user) => {
+      // Ensure user has required fields
+      if (!user || typeof user !== "object") return false;
+
       // Don't show current user in the list to prevent self-modification
       if (user.id === currentUser?.id) return false;
 
+      const firstName = user.first_name || "";
+      const lastName = user.last_name || "";
+      const email = user.email || "";
+      const contact = user.contact || "";
+
       const matchesSearch =
-        user.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.contact.includes(searchQuery);
+        firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.includes(searchQuery);
 
       const matchesRole = roleFilter === "all" || user.role === roleFilter;
 
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "active" && user.is_active) ||
-        (statusFilter === "inactive" && !user.is_active);
+        (statusFilter === "active" && user.is_active === true) ||
+        (statusFilter === "inactive" && user.is_active === false);
 
       return matchesSearch && matchesRole && matchesStatus;
     })
@@ -98,18 +109,20 @@ export const UserTable = ({
       let comparison = 0;
       switch (sortBy) {
         case "name":
-          comparison = `${a.first_name} ${a.last_name}`.localeCompare(
-            `${b.first_name} ${b.last_name}`
-          );
+          const nameA = `${a.first_name || ""} ${a.last_name || ""}`;
+          const nameB = `${b.first_name || ""} ${b.last_name || ""}`;
+          comparison = nameA.localeCompare(nameB);
           break;
         case "email":
-          comparison = a.email.localeCompare(b.email);
+          comparison = (a.email || "").localeCompare(b.email || "");
           break;
         case "role":
-          comparison = a.role.localeCompare(b.role);
+          comparison = (a.role || "").localeCompare(b.role || "");
           break;
         case "created":
-          comparison = new Date(b.created_at) - new Date(a.created_at);
+          const dateA = new Date(a.created_at || 0);
+          const dateB = new Date(b.created_at || 0);
+          comparison = dateB - dateA;
           break;
         default:
           break;
@@ -128,7 +141,7 @@ export const UserTable = ({
 
   const handleDelete = async (user) => {
     try {
-      if (onDelete) {
+      if (onDelete && user?.id) {
         await onDelete(user.id);
       }
     } catch (error) {
@@ -138,7 +151,7 @@ export const UserTable = ({
 
   const handleToggleStatus = async (user) => {
     try {
-      if (onToggleActive) {
+      if (onToggleActive && user?.id !== undefined) {
         await onToggleActive(user.id, !user.is_active);
       }
     } catch (error) {
@@ -157,10 +170,13 @@ export const UserTable = ({
   };
 
   const handleSelectAll = (checked) => {
-    setSelectedUsers(checked ? filteredUsers.map((u) => u.id) : []);
+    setSelectedUsers(
+      checked ? filteredUsers.map((u) => u.id).filter(Boolean) : []
+    );
   };
 
   const handleSelectUser = (userId, checked) => {
+    if (!userId) return;
     setSelectedUsers((prev) =>
       checked ? [...prev, userId] : prev.filter((id) => id !== userId)
     );
@@ -168,23 +184,23 @@ export const UserTable = ({
 
   const canDeleteUser = (user) => {
     // Only admins can delete users, and cannot delete themselves
-    return isAdmin() && user.id !== currentUser?.id;
+    return isAdmin() && user?.id !== currentUser?.id;
   };
 
   const canEditUser = (user) => {
     // Admins can edit anyone except themselves, regular users can't edit
-    return isAdmin() && user.id !== currentUser?.id;
+    return isAdmin() && user?.id !== currentUser?.id;
   };
 
   const canManagePrivileges = (user) => {
     // Only admins can manage privileges for regular users
-    return isAdmin() && user.role === "user";
+    return isAdmin() && user?.role === "user";
   };
 
   const renderPrivilegesSummary = (user) => {
-    const privileges = getUserPrivileges(user.id);
-    if (!privileges || user.role === "admin") {
-      return user.role === "admin" ? (
+    const privileges = getUserPrivileges(user?.id);
+    if (!privileges || user?.role === "admin") {
+      return user?.role === "admin" ? (
         <span className="text-xs text-green-600">Full Access</span>
       ) : (
         <span className="text-xs text-muted-foreground">No privileges set</span>
@@ -204,6 +220,15 @@ export const UserTable = ({
           : "Read-only"}
       </span>
     );
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return "Invalid Date";
+    }
   };
 
   if (error) {
@@ -279,7 +304,7 @@ export const UserTable = ({
       {/* Results Summary */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          {filteredUsers.length} of {users.length} users
+          {filteredUsers.length} of {safeUsers.length} users
         </span>
         {selectedUsers.length > 0 && (
           <span>{selectedUsers.length} selected</span>
@@ -386,15 +411,15 @@ export const UserTable = ({
                         </div>
                         <div>
                           <h4 className="font-medium text-sm">
-                            {user.first_name} {user.last_name}
+                            {user.first_name || ""} {user.last_name || ""}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            {user.contact}
+                            {user.contact || "N/A"}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="p-3 text-sm">{user.email}</td>
+                    <td className="p-3 text-sm">{user.email || "N/A"}</td>
                     <td className="p-3">
                       <span
                         className={cn(
@@ -426,7 +451,7 @@ export const UserTable = ({
                       </div>
                     </td>
                     <td className="p-3 text-sm text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString()}
+                      {formatDate(user.created_at)}
                     </td>
                     <td className="p-3">
                       <div className="flex items-center space-x-1">
@@ -502,7 +527,7 @@ export const UserTable = ({
         loading={deleting}
         itemName={
           actionTarget
-            ? `${actionTarget.first_name} ${actionTarget.last_name}`
+            ? `${actionTarget.first_name || ""} ${actionTarget.last_name || ""}`
             : ""
         }
         itemType="user"
@@ -515,7 +540,7 @@ export const UserTable = ({
         loading={togglingStatus}
         itemName={
           actionTarget
-            ? `${actionTarget.first_name} ${actionTarget.last_name}`
+            ? `${actionTarget.first_name || ""} ${actionTarget.last_name || ""}`
             : ""
         }
         itemType="user"

@@ -9,7 +9,7 @@ import { UserManagementLayout } from "@/components/admin/AdminLayout";
 import { UserForm } from "@/components/admin/UserForm";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
-import { getUserById, mockUsers } from "@/lib/mockData";
+import { authAPI } from "@/lib/api";
 import { SUCCESS_MESSAGES } from "@/lib/constants";
 
 function EditUserPageContent({ userId }) {
@@ -30,24 +30,28 @@ function EditUserPageContent({ userId }) {
       setError(null);
 
       try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        const response = await authAPI.getUser(userId);
 
-        // Get user from mock data
-        const userData = getUserById(parseInt(userId));
+        if (response.success) {
+          const userData = response.data;
 
-        if (!userData) {
-          notFound();
-          return;
+          if (!userData) {
+            notFound();
+            return;
+          }
+
+          // Prevent editing current user
+          if (userData.id === currentUser?.id) {
+            setError(
+              "You cannot edit your own account through this interface."
+            );
+            return;
+          }
+
+          setUser(userData);
+        } else {
+          throw new Error(response.error || "Failed to load user");
         }
-
-        // Prevent editing current user
-        if (userData.id === currentUser?.id) {
-          setError("You cannot edit your own account through this interface.");
-          return;
-        }
-
-        setUser(userData);
       } catch (err) {
         console.error("Failed to load user:", err);
         setError("Failed to load user. Please try again.");
@@ -73,38 +77,25 @@ function EditUserPageContent({ userId }) {
     setSubmitting(true);
 
     try {
-      // Check if email already exists (excluding current user)
-      const existingUser = mockUsers.find(
-        (u) =>
-          u.email.toLowerCase() === formData.email.toLowerCase() &&
-          u.id !== user.id
-      );
+      const response = await authAPI.updateUser(user.id, formData);
 
-      if (existingUser) {
-        throw new Error("A user with this email already exists.");
+      if (response.success) {
+        const updatedUser = response.data;
+        setUser(updatedUser);
+        console.log("User updated successfully:", updatedUser);
+        // Redirect will be handled by UserForm component
+      } else {
+        // Handle validation errors or other API errors
+        if (response.errors) {
+          // Laravel validation errors
+          const errorMessages = Object.values(response.errors)
+            .flat()
+            .join(", ");
+          throw new Error(errorMessages);
+        } else {
+          throw new Error(response.error || "Failed to update user");
+        }
       }
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // In real app, this would be an API call
-      // For now, update in mock data
-      const updatedUser = {
-        ...user,
-        ...formData,
-        updated_at: new Date().toISOString(),
-      };
-
-      // Update in mock data
-      const index = mockUsers.findIndex((u) => u.id === user.id);
-      if (index !== -1) {
-        mockUsers[index] = updatedUser;
-      }
-
-      setUser(updatedUser);
-      console.log(SUCCESS_MESSAGES.USER_UPDATED, updatedUser);
-
-      // Redirect will be handled by UserForm component
     } catch (err) {
       console.error("Failed to update user:", err);
       throw err;

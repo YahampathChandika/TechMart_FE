@@ -99,13 +99,6 @@ export default function CustomerHomepage() {
                 Shop Now
               </Button>
             </Link>
-            {!isCustomer() && (
-              <Link href="/register">
-                <Button variant="outline" size="lg">
-                  Create Account
-                </Button>
-              </Link>
-            )}
           </div>
         </div>
       </section>

@@ -80,10 +80,13 @@ export const UserForm = ({
         delete formattedData.confirm_password;
       }
 
+      // Remove confirm_password before sending to API
+      delete formattedData.confirm_password;
+
       if (onSubmit) {
         await onSubmit(formattedData);
         setSubmitSuccess(
-          isEdit ? SUCCESS_MESSAGES.USER_UPDATED : SUCCESS_MESSAGES.USER_CREATED
+          isEdit ? "User updated successfully!" : "User created successfully!"
         );
 
         // Redirect after success
@@ -103,6 +106,17 @@ export const UserForm = ({
     } else {
       router.back();
     }
+  };
+
+  // Validation helpers
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const isValidPhone = (phone) => {
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ""));
   };
 
   if (!hasPermission) {
@@ -181,14 +195,14 @@ export const UserForm = ({
                 </label>
                 <input
                   {...register("first_name", {
-                    required: ERROR_MESSAGES.REQUIRED_FIELD,
+                    required: "First name is required",
                     minLength: {
                       value: 2,
-                      message: ERROR_MESSAGES.NAME_TOO_SHORT,
+                      message: "First name must be at least 2 characters",
                     },
                     maxLength: {
                       value: 50,
-                      message: ERROR_MESSAGES.NAME_TOO_LONG,
+                      message: "First name must be less than 50 characters",
                     },
                   })}
                   type="text"
@@ -212,14 +226,14 @@ export const UserForm = ({
                 </label>
                 <input
                   {...register("last_name", {
-                    required: ERROR_MESSAGES.REQUIRED_FIELD,
+                    required: "Last name is required",
                     minLength: {
                       value: 2,
-                      message: ERROR_MESSAGES.NAME_TOO_SHORT,
+                      message: "Last name must be at least 2 characters",
                     },
                     maxLength: {
                       value: 50,
-                      message: ERROR_MESSAGES.NAME_TOO_LONG,
+                      message: "Last name must be less than 50 characters",
                     },
                   })}
                   type="text"
@@ -244,10 +258,9 @@ export const UserForm = ({
               </label>
               <input
                 {...register("email", {
-                  required: ERROR_MESSAGES.REQUIRED_FIELD,
+                  required: "Email is required",
                   validate: (value) =>
-                    validation.isValidEmail(value) ||
-                    ERROR_MESSAGES.INVALID_EMAIL,
+                    isValidEmail(value) || "Please enter a valid email address",
                 })}
                 type="email"
                 id="email"
@@ -270,10 +283,9 @@ export const UserForm = ({
               </label>
               <input
                 {...register("contact", {
-                  required: ERROR_MESSAGES.REQUIRED_FIELD,
+                  required: "Phone number is required",
                   validate: (value) =>
-                    validation.isValidPhone(value) ||
-                    ERROR_MESSAGES.INVALID_PHONE,
+                    isValidPhone(value) || "Please enter a valid phone number",
                 })}
                 type="tel"
                 id="contact"
@@ -301,7 +313,7 @@ export const UserForm = ({
               </label>
               <select
                 {...register("role", {
-                  required: ERROR_MESSAGES.REQUIRED_FIELD,
+                  required: "Role is required",
                 })}
                 id="role"
                 disabled={loading || isSubmitting}
@@ -362,10 +374,10 @@ export const UserForm = ({
               <div className="relative">
                 <input
                   {...register("password", {
-                    required: isEdit ? false : ERROR_MESSAGES.REQUIRED_FIELD,
+                    required: isEdit ? false : "Password is required",
                     minLength: {
                       value: 6,
-                      message: ERROR_MESSAGES.PASSWORD_TOO_SHORT,
+                      message: "Password must be at least 6 characters",
                     },
                   })}
                   type={showPassword ? "text" : "password"}
@@ -408,7 +420,7 @@ export const UserForm = ({
                     required:
                       isEdit && !password
                         ? false
-                        : ERROR_MESSAGES.REQUIRED_FIELD,
+                        : "Please confirm your password",
                     validate: (value) => {
                       if (password && value !== password) {
                         return "Passwords do not match";

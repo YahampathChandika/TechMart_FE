@@ -9,7 +9,7 @@ import { UserManagementLayout } from "@/components/admin/AdminLayout";
 import { UserTable } from "@/components/admin/UserTable";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
-import { mockUsers, mockUserPrivileges } from "@/lib/mockData";
+import { authAPI } from "@/lib/api";
 import { SUCCESS_MESSAGES } from "@/lib/constants";
 
 function UsersPageContent() {
@@ -29,12 +29,20 @@ function UsersPageContent() {
     setError(null);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const response = await authAPI.getUsers();
 
-      // In real app, these would be API calls
-      setUsers([...mockUsers]);
-      setUserPrivileges([...mockUserPrivileges]);
+      if (response.success) {
+        // Handle different response structures from backend
+        const usersData = response.data?.data || response.data || [];
+        setUsers(Array.isArray(usersData) ? usersData : []);
+
+        // TODO: Load user privileges when API endpoint is available
+        // const privilegesResponse = await authAPI.getUserPrivileges();
+        // setUserPrivileges(privilegesResponse.data || []);
+        setUserPrivileges([]); // Placeholder until privilege API is implemented
+      } else {
+        throw new Error(response.error || "Failed to load users");
+      }
     } catch (err) {
       console.error("Failed to load users:", err);
       setError("Failed to load users. Please try again.");
@@ -48,15 +56,16 @@ function UsersPageContent() {
     setActionLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await authAPI.deleteUser(userId);
 
-      // In real app, this would be an API call
-      // For now, remove from local state
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
-      setUserPrivileges((prev) => prev.filter((p) => p.user_id !== userId));
-
-      console.log(SUCCESS_MESSAGES.USER_DELETED);
+      if (response.success) {
+        // Remove from local state
+        setUsers((prev) => prev.filter((u) => u.id !== userId));
+        setUserPrivileges((prev) => prev.filter((p) => p.user_id !== userId));
+        console.log("User deleted successfully");
+      } else {
+        throw new Error(response.error || "Failed to delete user");
+      }
     } catch (err) {
       console.error("Failed to delete user:", err);
       setError("Failed to delete user. Please try again.");
@@ -70,26 +79,30 @@ function UsersPageContent() {
     setActionLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await authAPI.updateUser(userId, {
+        is_active: newStatus,
+      });
 
-      // In real app, this would be an API call
-      // For now, update local state
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === userId
-            ? {
-                ...u,
-                is_active: newStatus,
-                updated_at: new Date().toISOString(),
-              }
-            : u
-        )
-      );
+      if (response.success) {
+        // Update local state
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === userId
+              ? {
+                  ...u,
+                  is_active: newStatus,
+                  updated_at: new Date().toISOString(),
+                }
+              : u
+          )
+        );
 
-      console.log(
-        `User ${newStatus ? "activated" : "deactivated"} successfully`
-      );
+        console.log(
+          `User ${newStatus ? "activated" : "deactivated"} successfully`
+        );
+      } else {
+        throw new Error(response.error || "Failed to update user status");
+      }
     } catch (err) {
       console.error("Failed to update user status:", err);
       setError("Failed to update user status. Please try again.");

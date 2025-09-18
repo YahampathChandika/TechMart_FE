@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { UserManagementLayout } from "@/components/admin/AdminLayout";
 import { UserForm } from "@/components/admin/UserForm";
 import { useAuth } from "@/hooks";
-import { mockUsers, mockUserPrivileges } from "@/lib/mockData";
+import { authAPI } from "@/lib/api";
 import { SUCCESS_MESSAGES } from "@/lib/constants";
 
 function CreateUserPageContent() {
@@ -27,47 +27,23 @@ function CreateUserPageContent() {
     setError(null);
 
     try {
-      // Check if email already exists
-      const existingUser = mockUsers.find(
-        (user) => user.email.toLowerCase() === formData.email.toLowerCase()
-      );
+      const response = await authAPI.createUser(formData);
 
-      if (existingUser) {
-        throw new Error("A user with this email already exists.");
+      if (response.success) {
+        console.log("User created successfully:", response.data);
+        // Redirect will be handled by UserForm component
+      } else {
+        // Handle validation errors or other API errors
+        if (response.errors) {
+          // Laravel validation errors
+          const errorMessages = Object.values(response.errors)
+            .flat()
+            .join(", ");
+          throw new Error(errorMessages);
+        } else {
+          throw new Error(response.error || "Failed to create user");
+        }
       }
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // In real app, this would be an API call
-      // For now, add to mock data
-      const newUser = {
-        id: Math.max(...mockUsers.map((u) => u.id)) + 1,
-        ...formData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      // Add to mock data (in real app, this would be handled by API)
-      mockUsers.push(newUser);
-
-      // Create default privileges for regular users
-      if (newUser.role === "user") {
-        const newPrivileges = {
-          id: Math.max(...mockUserPrivileges.map((p) => p.id)) + 1,
-          user_id: newUser.id,
-          can_add_products: false,
-          can_update_products: false,
-          can_delete_products: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        mockUserPrivileges.push(newPrivileges);
-      }
-
-      console.log(SUCCESS_MESSAGES.USER_CREATED, newUser);
-
-      // Redirect will be handled by UserForm component
     } catch (err) {
       console.error("Failed to create user:", err);
       throw err;
