@@ -321,39 +321,14 @@ function CustomersPageContent() {
       )}
 
       {/* Customers Table */}
-      <div className="bg-background border rounded-lg">
-        <CustomerTable
-          customers={customers}
-          loading={loading}
-          error={null}
-          onDelete={canDelete ? handleDelete : null}
-          onToggleActive={canDelete ? handleToggleActive : null}
-          onRefresh={loadCustomers}
-        />
-      </div>
-
-      {/* Customer Management Guidelines */}
-      <div className="bg-muted/50 rounded-lg p-4">
-        <h3 className="font-medium mb-2">Customer Management Guidelines</h3>
-        <div className="text-sm text-muted-foreground space-y-1">
-          <p>
-            • Customer accounts are created through the public registration
-            process
-          </p>
-          <p>• Deactivated customers cannot log in or make purchases</p>
-          <p>
-            • Customer data is protected and should only be accessed when
-            necessary
-          </p>
-          <p>
-            • Deleted customers cannot be recovered - deactivate instead when
-            possible
-          </p>
-          {!isAdmin() && (
-            <p>• Only administrators can modify or delete customer accounts</p>
-          )}
-        </div>
-      </div>
+      <CustomerTable
+        customers={customers}
+        loading={loading}
+        error={null}
+        onDelete={canDelete ? handleDelete : null}
+        onToggleActive={canDelete ? handleToggleActive : null}
+        onRefresh={loadCustomers}
+      />
     </div>
   );
 }

@@ -225,9 +225,9 @@ export const AdminSidebar = ({ isCollapsed = false, onToggle }) => {
             </Link>
             <Link href="/profile">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="w-full flex items-center gap-2 justify-start"
+                className="w-full flex items-center gap-2 justify-start mt-2"
               >
                 <Settings className="h-4 w-4" />
                 Profile Settings

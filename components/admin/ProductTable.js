@@ -206,16 +206,24 @@ export const ProductTable = ({
 
   const getStockStatus = (product) => {
     if (product.quantity === 0) {
-      return { text: "Out of Stock", color: "text-red-600", bg: "bg-red-100" };
+      return {
+        text: "Out of Stock",
+        color: "text-red-600 dark:text-red-400",
+        bg: "bg-red-100 dark:bg-red-950/50",
+      };
     }
     if (product.quantity < 20) {
       return {
         text: "Low Stock",
-        color: "text-orange-600",
-        bg: "bg-orange-100",
+        color: "text-orange-600 dark:text-orange-400",
+        bg: "bg-orange-100 dark:bg-orange-950/50",
       };
     }
-    return { text: "In Stock", color: "text-green-600", bg: "bg-green-100" };
+    return {
+      text: "In Stock",
+      color: "text-green-600 dark:text-green-400",
+      bg: "bg-green-100 dark:bg-green-950/50",
+    };
   };
 
   if (error) {
@@ -230,7 +238,7 @@ export const ProductTable = ({
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-4 mt-10", className)}>
       {/* Header and Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex-1 space-y-2 sm:space-y-0 sm:space-x-2 sm:flex sm:items-center">
@@ -262,11 +270,11 @@ export const ProductTable = ({
 
         {/* Actions */}
         <div className="flex gap-2">
-          {onRefresh && (
+          {/* {onRefresh && (
             <Button variant="outline" onClick={onRefresh} disabled={loading}>
               {loading ? <InlineLoadingSpinner /> : "Refresh"}
             </Button>
-          )}
+          )} */}
 
           {canAdd && (
             <Link href="/admin/products/create">
@@ -410,7 +418,7 @@ export const ProductTable = ({
                             <h4 className="font-medium text-sm line-clamp-1">
                               {product.name}
                             </h4>
-                            <p className="text-xs text-muted-foreground line-clamp-1">
+                            <p className="text-xs text-muted-foreground line-clamp-1 max-w-96">
                               {product.description}
                             </p>
                           </div>

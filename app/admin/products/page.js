@@ -209,14 +209,14 @@ function ProductsPageContent() {
           </div>
 
           {/* Add Product Button */}
-          {canAdd && (
+          {/* {canAdd && (
             <Link href="/admin/products/create">
               <Button className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Add Product
               </Button>
             </Link>
-          )}
+          )} */}
         </div>
       </div>
 
@@ -282,16 +282,14 @@ function ProductsPageContent() {
 
       {/* Products Table */}
       {!loading && (
-        <div className="bg-background border rounded-lg">
-          <ProductTable
-            products={products}
-            loading={actionLoading}
-            error={null}
-            onDelete={canDelete ? handleDelete : null}
-            onToggleActive={canUpdate ? handleToggleActive : null}
-            onRefresh={handleRefresh}
-          />
-        </div>
+        <ProductTable
+          products={products}
+          loading={actionLoading}
+          error={null}
+          onDelete={canDelete ? handleDelete : null}
+          onToggleActive={canUpdate ? handleToggleActive : null}
+          onRefresh={handleRefresh}
+        />
       )}
     </div>
   );

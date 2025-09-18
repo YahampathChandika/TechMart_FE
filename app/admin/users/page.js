@@ -156,14 +156,6 @@ function UsersPageContent() {
               Import
             </Button>
           </div>
-
-          {/* Add User Button */}
-          <Link href="/admin/users/create">
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add User
-            </Button>
-          </Link>
         </div>
       </div>
 
@@ -220,32 +212,16 @@ function UsersPageContent() {
         />
       )}
 
-      {/* User Management Info */}
-      <div className="bg-muted/50 rounded-lg p-4">
-        <h3 className="font-medium mb-2">User Management Guidelines</h3>
-        <div className="text-sm text-muted-foreground space-y-1">
-          <p>• Administrators have full access to all system features</p>
-          <p>• Regular users require specific privileges to manage products</p>
-          <p>• You cannot modify your own account through this interface</p>
-          <p>
-            • Deleted users cannot be recovered - deactivate instead when
-            possible
-          </p>
-        </div>
-      </div>
-
       {/* Users Table */}
-      <div className="bg-background border rounded-lg">
-        <UserTable
-          users={users}
-          userPrivileges={userPrivileges}
-          loading={loading}
-          error={null}
-          onDelete={handleDelete}
-          onToggleActive={handleToggleActive}
-          onRefresh={loadUsers}
-        />
-      </div>
+      <UserTable
+        users={users}
+        userPrivileges={userPrivileges}
+        loading={loading}
+        error={null}
+        onDelete={handleDelete}
+        onToggleActive={handleToggleActive}
+        onRefresh={loadUsers}
+      />
     </div>
   );
 }

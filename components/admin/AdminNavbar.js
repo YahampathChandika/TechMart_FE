@@ -39,7 +39,9 @@ export const AdminNavbar = ({
     e.preventDefault();
     if (searchQuery.trim()) {
       // Navigate to products page with search query
-      router.push(`/admin/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(
+        `/admin/products?search=${encodeURIComponent(searchQuery.trim())}`
+      );
     }
   };
 
@@ -94,7 +96,7 @@ export const AdminNavbar = ({
                 <span className="hidden lg:inline">Store</span>
               </Button>
             </Link>
-
+            {/* 
             <Button
               variant="ghost"
               size="sm"
@@ -103,20 +105,8 @@ export const AdminNavbar = ({
             >
               <HelpCircle className="h-4 w-4" />
               <span className="hidden lg:inline">Help</span>
-            </Button>
+            </Button> */}
           </div>
-
-          {/* Notifications */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="relative p-2"
-            title="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-            {/* Notification badge */}
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
-          </Button>
 
           {/* Theme toggle */}
           <ThemeToggle variant="ghost" size="sm" />
