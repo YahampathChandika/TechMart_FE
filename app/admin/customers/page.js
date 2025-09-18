@@ -8,7 +8,7 @@ import { UserManagementLayout } from "@/components/admin/AdminLayout";
 import { CustomerTable } from "@/components/admin/CustomerTable";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
-import { mockCustomers } from "@/lib/mockData";
+import { authAPI } from "@/lib/api";
 import { SUCCESS_MESSAGES } from "@/lib/constants";
 
 function CustomersPageContent() {
@@ -28,11 +28,15 @@ function CustomersPageContent() {
     setError(null);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const response = await authAPI.getCustomers();
 
-      // In real app, this would be an API call
-      setCustomers([...mockCustomers]);
+      if (response.success) {
+        // Handle different response structures from backend
+        const customersData = response.data?.data || response.data || [];
+        setCustomers(Array.isArray(customersData) ? customersData : []);
+      } else {
+        throw new Error(response.error || "Failed to load customers");
+      }
     } catch (err) {
       console.error("Failed to load customers:", err);
       setError("Failed to load customers. Please try again.");
@@ -50,14 +54,15 @@ function CustomersPageContent() {
     setActionLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await authAPI.deleteCustomer(customerId);
 
-      // In real app, this would be an API call
-      // For now, remove from local state
-      setCustomers((prev) => prev.filter((c) => c.id !== customerId));
-
-      console.log("Customer deleted successfully");
+      if (response.success) {
+        // Remove from local state
+        setCustomers((prev) => prev.filter((c) => c.id !== customerId));
+        console.log("Customer deleted successfully");
+      } else {
+        throw new Error(response.error || "Failed to delete customer");
+      }
     } catch (err) {
       console.error("Failed to delete customer:", err);
       setError("Failed to delete customer. Please try again.");
@@ -75,26 +80,30 @@ function CustomersPageContent() {
     setActionLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await authAPI.updateCustomer(customerId, {
+        is_active: newStatus,
+      });
 
-      // In real app, this would be an API call
-      // For now, update local state
-      setCustomers((prev) =>
-        prev.map((c) =>
-          c.id === customerId
-            ? {
-                ...c,
-                is_active: newStatus,
-                updated_at: new Date().toISOString(),
-              }
-            : c
-        )
-      );
+      if (response.success) {
+        // Update local state
+        setCustomers((prev) =>
+          prev.map((c) =>
+            c.id === customerId
+              ? {
+                  ...c,
+                  is_active: newStatus,
+                  updated_at: new Date().toISOString(),
+                }
+              : c
+          )
+        );
 
-      console.log(
-        `Customer ${newStatus ? "activated" : "deactivated"} successfully`
-      );
+        console.log(
+          `Customer ${newStatus ? "activated" : "deactivated"} successfully`
+        );
+      } else {
+        throw new Error(response.error || "Failed to update customer status");
+      }
     } catch (err) {
       console.error("Failed to update customer status:", err);
       setError("Failed to update customer status. Please try again.");
@@ -222,73 +231,6 @@ function CustomersPageContent() {
           </div>
           <p className="text-2xl font-bold mt-1">{stats.thisWeek}</p>
           <p className="text-xs text-muted-foreground">Recent signups</p>
-        </div>
-      </div>
-
-      {/* Customer Insights */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="bg-background border rounded-lg p-4">
-          <h3 className="font-medium mb-3">Registration Trend</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>This month</span>
-              <span className="font-medium text-green-600">
-                +{stats.thisMonth}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>This week</span>
-              <span className="font-medium text-blue-600">
-                +{stats.thisWeek}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Average per month</span>
-              <span className="font-medium">
-                {Math.round(stats.total / 12)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-background border rounded-lg p-4">
-          <h3 className="font-medium mb-3">Account Status</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Active Rate</span>
-              <span className="font-medium text-green-600">
-                {((stats.active / stats.total) * 100).toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Inactive Rate</span>
-              <span className="font-medium text-red-600">
-                {((stats.inactive / stats.total) * 100).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-background border rounded-lg p-4">
-          <h3 className="font-medium mb-3">Quick Actions</h3>
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start"
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Send Newsletter
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export List
-            </Button>
-          </div>
         </div>
       </div>
 

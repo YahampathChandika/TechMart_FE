@@ -63,19 +63,30 @@ export const CustomerTable = ({
 
   const [actionTarget, setActionTarget] = useState(null);
 
+  // Safe data access helpers
+  const safeCustomers = Array.isArray(customers) ? customers : [];
+
   // Filter and sort customers
-  const filteredCustomers = customers
+  const filteredCustomers = safeCustomers
     .filter((customer) => {
+      // Ensure customer has required fields
+      if (!customer || typeof customer !== "object") return false;
+
+      const firstName = customer.first_name || "";
+      const lastName = customer.last_name || "";
+      const email = customer.email || "";
+      const contact = customer.contact || "";
+
       const matchesSearch =
-        customer.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.contact.includes(searchQuery);
+        firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.includes(searchQuery);
 
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "active" && customer.is_active) ||
-        (statusFilter === "inactive" && !customer.is_active);
+        (statusFilter === "active" && customer.is_active === true) ||
+        (statusFilter === "inactive" && customer.is_active === false);
 
       return matchesSearch && matchesStatus;
     })
@@ -83,15 +94,17 @@ export const CustomerTable = ({
       let comparison = 0;
       switch (sortBy) {
         case "name":
-          comparison = `${a.first_name} ${a.last_name}`.localeCompare(
-            `${b.first_name} ${b.last_name}`
-          );
+          const nameA = `${a.first_name || ""} ${a.last_name || ""}`;
+          const nameB = `${b.first_name || ""} ${b.last_name || ""}`;
+          comparison = nameA.localeCompare(nameB);
           break;
         case "email":
-          comparison = a.email.localeCompare(b.email);
+          comparison = (a.email || "").localeCompare(b.email || "");
           break;
         case "created":
-          comparison = new Date(b.created_at) - new Date(a.created_at);
+          const dateA = new Date(a.created_at || 0);
+          const dateB = new Date(b.created_at || 0);
+          comparison = dateB - dateA;
           break;
         default:
           break;
@@ -110,21 +123,23 @@ export const CustomerTable = ({
 
   const handleDelete = async (customer) => {
     try {
-      if (onDelete) {
+      if (onDelete && customer?.id) {
         await onDelete(customer.id);
       }
     } catch (error) {
       console.error("Failed to delete customer:", error);
+      // Error handling is managed by parent component
     }
   };
 
   const handleToggleStatus = async (customer) => {
     try {
-      if (onToggleActive) {
+      if (onToggleActive && customer?.id !== undefined) {
         await onToggleActive(customer.id, !customer.is_active);
       }
     } catch (error) {
       console.error("Failed to toggle customer status:", error);
+      // Error handling is managed by parent component
     }
   };
 
@@ -139,30 +154,65 @@ export const CustomerTable = ({
   };
 
   const handleSelectAll = (checked) => {
-    setSelectedCustomers(checked ? filteredCustomers.map((c) => c.id) : []);
+    setSelectedCustomers(
+      checked ? filteredCustomers.map((c) => c.id).filter(Boolean) : []
+    );
   };
 
   const handleSelectCustomer = (customerId, checked) => {
+    if (!customerId) return;
     setSelectedCustomers((prev) =>
       checked ? [...prev, customerId] : prev.filter((id) => id !== customerId)
     );
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return "Invalid Date";
+    }
   };
 
   const getCustomerAge = (createdAt) => {
-    const now = new Date();
-    const created = new Date(createdAt);
-    const diffInDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+    if (!createdAt) return "Unknown";
 
-    if (diffInDays < 1) return "Today";
-    if (diffInDays === 1) return "1 day";
-    if (diffInDays < 30) return `${diffInDays} days`;
-    if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months`;
-    return `${Math.floor(diffInDays / 365)} years`;
+    try {
+      const now = new Date();
+      const created = new Date(createdAt);
+      const diffInDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+
+      if (diffInDays < 1) return "Today";
+      if (diffInDays === 1) return "1 day";
+      if (diffInDays < 30) return `${diffInDays} days`;
+      if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months`;
+      return `${Math.floor(diffInDays / 365)} years`;
+    } catch {
+      return "Unknown";
+    }
   };
+
+  // Calculate stats with safe data access
+  const activeCustomers = safeCustomers.filter(
+    (c) => c?.is_active === true
+  ).length;
+  const inactiveCustomers = safeCustomers.filter(
+    (c) => c?.is_active === false
+  ).length;
+  const thisMonthCustomers = safeCustomers.filter((c) => {
+    if (!c?.created_at) return false;
+    try {
+      const created = new Date(c.created_at);
+      const now = new Date();
+      return (
+        created.getMonth() === now.getMonth() &&
+        created.getFullYear() === now.getFullYear()
+      );
+    } catch {
+      return false;
+    }
+  }).length;
 
   if (error) {
     return (
@@ -217,7 +267,7 @@ export const CustomerTable = ({
       {/* Results Summary */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          {filteredCustomers.length} of {customers.length} customers
+          {filteredCustomers.length} of {safeCustomers.length} customers
         </span>
         {selectedCustomers.length > 0 && (
           <span>{selectedCustomers.length} selected</span>
@@ -231,7 +281,7 @@ export const CustomerTable = ({
             <User className="h-4 w-4 text-blue-600" />
             <span className="text-sm font-medium">Total</span>
           </div>
-          <p className="text-2xl font-bold mt-1">{customers.length}</p>
+          <p className="text-2xl font-bold mt-1">{safeCustomers.length}</p>
         </div>
 
         <div className="bg-background border rounded-lg p-4">
@@ -239,9 +289,7 @@ export const CustomerTable = ({
             <div className="w-2 h-2 bg-green-500 rounded-full" />
             <span className="text-sm font-medium">Active</span>
           </div>
-          <p className="text-2xl font-bold mt-1">
-            {customers.filter((c) => c.is_active).length}
-          </p>
+          <p className="text-2xl font-bold mt-1">{activeCustomers}</p>
         </div>
 
         <div className="bg-background border rounded-lg p-4">
@@ -249,9 +297,7 @@ export const CustomerTable = ({
             <div className="w-2 h-2 bg-red-500 rounded-full" />
             <span className="text-sm font-medium">Inactive</span>
           </div>
-          <p className="text-2xl font-bold mt-1">
-            {customers.filter((c) => !c.is_active).length}
-          </p>
+          <p className="text-2xl font-bold mt-1">{inactiveCustomers}</p>
         </div>
 
         <div className="bg-background border rounded-lg p-4">
@@ -259,18 +305,7 @@ export const CustomerTable = ({
             <Calendar className="h-4 w-4 text-purple-600" />
             <span className="text-sm font-medium">This Month</span>
           </div>
-          <p className="text-2xl font-bold mt-1">
-            {
-              customers.filter((c) => {
-                const created = new Date(c.created_at);
-                const now = new Date();
-                return (
-                  created.getMonth() === now.getMonth() &&
-                  created.getFullYear() === now.getFullYear()
-                );
-              }).length
-            }
-          </p>
+          <p className="text-2xl font-bold mt-1">{thisMonthCustomers}</p>
         </div>
       </div>
 
@@ -356,7 +391,8 @@ export const CustomerTable = ({
                         </div>
                         <div>
                           <h4 className="font-medium text-sm">
-                            {customer.first_name} {customer.last_name}
+                            {customer.first_name || ""}{" "}
+                            {customer.last_name || ""}
                           </h4>
                           <p className="text-xs text-muted-foreground">
                             Customer #{customer.id}
@@ -368,11 +404,11 @@ export const CustomerTable = ({
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2 text-sm">
                           <Mail className="h-3 w-3 text-muted-foreground" />
-                          <span>{customer.email}</span>
+                          <span>{customer.email || "N/A"}</span>
                         </div>
                         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                           <Phone className="h-3 w-3" />
-                          <span>{customer.contact}</span>
+                          <span>{customer.contact || "N/A"}</span>
                         </div>
                       </div>
                     </td>
@@ -464,7 +500,7 @@ export const CustomerTable = ({
         loading={deleting}
         itemName={
           actionTarget
-            ? `${actionTarget.first_name} ${actionTarget.last_name}`
+            ? `${actionTarget.first_name || ""} ${actionTarget.last_name || ""}`
             : ""
         }
         itemType="customer"
@@ -477,7 +513,7 @@ export const CustomerTable = ({
         loading={togglingStatus}
         itemName={
           actionTarget
-            ? `${actionTarget.first_name} ${actionTarget.last_name}`
+            ? `${actionTarget.first_name || ""} ${actionTarget.last_name || ""}`
             : ""
         }
         itemType="customer"
