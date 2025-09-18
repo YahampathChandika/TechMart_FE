@@ -117,11 +117,11 @@ export const CartItem = ({ item }) => {
 
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl font-bold text-primary">
-                ${parseFloat(product.sell_price).toFixed(2)}
+                ${parseFloat(product.cost_price).toFixed(2)}
               </span>
-              {product.cost_price && (
+              {product.sell_price && (
                 <span className="text-sm text-muted-foreground line-through">
-                  ${parseFloat(product.cost_price).toFixed(2)}
+                  ${parseFloat(product.sell_price).toFixed(2)}
                 </span>
               )}
             </div>

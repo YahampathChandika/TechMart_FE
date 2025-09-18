@@ -1,4 +1,4 @@
-// components/admin/ProductTable.js
+// components/admin/ProductTable.js - UPDATED FOR PRIVILEGE SYSTEM
 "use client";
 
 import { useState } from "react";
@@ -28,8 +28,14 @@ import {
   useConfirmDialog,
 } from "@/components/common";
 import { useAuth } from "@/hooks";
-import { permissions } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 export const ProductTable = ({
   products = [],
@@ -41,7 +47,8 @@ export const ProductTable = ({
   onRefresh = null,
   className = "",
 }) => {
-  const { user } = useAuth();
+  const { user, canAddProducts, canUpdateProducts, canDeleteProducts } =
+    useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name");
@@ -67,10 +74,10 @@ export const ProductTable = ({
 
   const [actionTarget, setActionTarget] = useState(null);
 
-  // Permission checks
-  const canUpdate = permissions.canUpdateProducts(user, null); // Would get user privileges in real app
-  const canDelete = permissions.canDeleteProducts(user, null);
-  const canAdd = permissions.canAddProducts(user, null);
+  // Permission checks using auth hook methods
+  const canUpdate = canUpdateProducts();
+  const canDelete = canDeleteProducts();
+  const canAdd = canAddProducts();
 
   // Helper function to format image URL
   const formatImageUrl = (imageUrl) => {
@@ -238,7 +245,7 @@ export const ProductTable = ({
   }
 
   return (
-    <div className={cn("space-y-4 mt-10", className)}>
+    <div className={cn("space-y-4", className)}>
       {/* Header and Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex-1 space-y-2 sm:space-y-0 sm:space-x-2 sm:flex sm:items-center">
@@ -255,27 +262,23 @@ export const ProductTable = ({
           </div>
 
           {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 px-3 text-sm border border-input rounded-md bg-background"
-          >
-            <option value="all">All Products</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
-            <option value="low-stock">Low Stock</option>
-            <option value="out-of-stock">Out of Stock</option>
-          </select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 px-3 text-sm">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Products</SelectItem>
+              <SelectItem value="active">Active Only</SelectItem>
+              <SelectItem value="inactive">Inactive Only</SelectItem>
+              <SelectItem value="low-stock">Low Stock</SelectItem>
+              <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Actions */}
         <div className="flex gap-2">
-          {/* {onRefresh && (
-            <Button variant="outline" onClick={onRefresh} disabled={loading}>
-              {loading ? <InlineLoadingSpinner /> : "Refresh"}
-            </Button>
-          )} */}
-
           {canAdd && (
             <Link href="/admin/products/create">
               <Button className="flex items-center gap-2">
@@ -460,27 +463,55 @@ export const ProductTable = ({
                       </td>
                       <td className="p-3">
                         <div className="flex items-center space-x-1">
+                          {/* View button - everyone can view */}
                           <Link href={`/admin/products/${product.id}`}>
-                            <Button variant="ghost" size="sm" className="p-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2"
+                              title="View Product"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
 
-                          {canUpdate && (
+                          {/* Edit button - only if user has update permission */}
+                          {canUpdate ? (
                             <Link href={`/admin/products/${product.id}/edit`}>
-                              <Button variant="ghost" size="sm" className="p-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-2"
+                                title="Edit Product"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 opacity-50 cursor-not-allowed"
+                              disabled
+                              title="Edit Product (No Permission)"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
                           )}
 
-                          {canUpdate && (
+                          {/* Toggle Status button - only if user has update permission */}
+                          {canUpdate ? (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleStatusClick(product)}
                               disabled={togglingStatus}
                               className="p-2"
+                              title={
+                                product.is_active
+                                  ? "Deactivate Product"
+                                  : "Activate Product"
+                              }
                             >
                               {togglingStatus &&
                               actionTarget?.id === product.id ? (
@@ -489,21 +520,43 @@ export const ProductTable = ({
                                 <Power className="h-4 w-4" />
                               )}
                             </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 opacity-50 cursor-not-allowed"
+                              disabled
+                              title="Toggle Status (No Permission)"
+                            >
+                              <Power className="h-4 w-4" />
+                            </Button>
                           )}
 
-                          {canDelete && (
+                          {/* Delete button - only if user has delete permission */}
+                          {canDelete ? (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteClick(product)}
                               disabled={deleting}
                               className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Delete Product"
                             >
                               {deleting && actionTarget?.id === product.id ? (
                                 <InlineLoadingSpinner />
                               ) : (
                                 <Trash2 className="h-4 w-4" />
                               )}
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 opacity-50 cursor-not-allowed text-red-400"
+                              disabled
+                              title="Delete Product (No Permission)"
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
                         </div>

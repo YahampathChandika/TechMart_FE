@@ -243,11 +243,11 @@ export const ProductDetails = ({ product, className = "" }) => {
           {/* Price */}
           <div className="flex items-center space-x-4">
             <span className="text-4xl font-bold text-primary">
-              ${product.sell_price}
+              ${product.cost_price}
             </span>
             {product.cost_price !== product.sell_price && (
               <span className="text-xl text-muted-foreground line-through">
-                ${product.cost_price}
+                ${product.sell_price}
               </span>
             )}
             {product.cost_price !== product.sell_price && (

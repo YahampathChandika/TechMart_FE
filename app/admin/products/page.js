@@ -1,4 +1,4 @@
-// app/admin/products/page.js
+// app/admin/products/page.js - UPDATED FOR PRIVILEGE SYSTEM
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,12 +9,18 @@ import { ProductManagementLayout } from "@/components/admin/AdminLayout";
 import { ProductTable } from "@/components/admin/ProductTable";
 import { LoadingSpinner, ErrorMessage } from "@/components/common";
 import { useAuth } from "@/hooks";
-import { permissions } from "@/lib/auth";
 import { authAPI } from "@/lib/api";
 import { SUCCESS_MESSAGES } from "@/lib/constants";
 
 function ProductsPageContent() {
-  const { user } = useAuth();
+  const {
+    user,
+    isAdmin,
+    isUser,
+    canAddProducts,
+    canUpdateProducts,
+    canDeleteProducts,
+  } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,10 +33,23 @@ function ProductsPageContent() {
     outOfStock: 0,
   });
 
-  // Permission checks
-  const canAdd = permissions.canAddProducts(user, null);
-  const canUpdate = permissions.canUpdateProducts(user, null);
-  const canDelete = permissions.canDeleteProducts(user, null);
+  // Permission checks using auth hook methods
+  const canView = isAdmin() || isUser(); // All authenticated admin/users can view
+  const canAdd = canAddProducts();
+  const canUpdate = canUpdateProducts();
+  const canDelete = canDeleteProducts();
+
+  // Check if user can access this page at all
+  if (!canView) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <ErrorMessage
+          title="Access Denied"
+          message="You don't have permission to access the admin area. Please contact your administrator."
+        />
+      </div>
+    );
+  }
 
   // Load products from backend API
   const loadProducts = async () => {
@@ -82,8 +101,13 @@ function ProductsPageContent() {
     setStats({ total, active, inactive, lowStock, outOfStock });
   };
 
-  // Handle product deletion
+  // Handle product deletion - only if user has delete permission
   const handleDelete = async (productId) => {
+    if (!canDelete) {
+      console.error("No permission to delete products");
+      return;
+    }
+
     setActionLoading(true);
 
     try {
@@ -109,8 +133,13 @@ function ProductsPageContent() {
     }
   };
 
-  // Handle product status toggle
+  // Handle product status toggle - only if user has update permission
   const handleToggleActive = async (productId, newStatus) => {
+    if (!canUpdate) {
+      console.error("No permission to update products");
+      return;
+    }
+
     setActionLoading(true);
 
     try {
@@ -170,6 +199,24 @@ function ProductsPageContent() {
     loadProducts();
   };
 
+  // Handle export (placeholder for now)
+  const handleExport = async () => {
+    try {
+      console.log("Exporting products...");
+      // Implementation for export would go here
+    } catch (err) {
+      console.error("Failed to export products:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner size="lg" text="Loading products..." />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -197,28 +244,69 @@ function ProductsPageContent() {
               Refresh
             </Button>
 
-            <Button variant="outline" size="sm" disabled>
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
+            {canView && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            )}
 
             <Button variant="outline" size="sm" disabled>
               <Upload className="h-4 w-4" />
               Import
             </Button>
           </div>
-
-          {/* Add Product Button */}
-          {/* {canAdd && (
-            <Link href="/admin/products/create">
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Product
-              </Button>
-            </Link>
-          )} */}
         </div>
       </div>
+
+      {/* Access Level Notice for Users with Limited Permissions */}
+      {!canAdd && !canUpdate && !canDelete && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-start space-x-2">
+            <Package className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium text-blue-800 dark:text-blue-200">
+                Read-Only Access
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                You have view-only access to the product catalog. Contact your
+                administrator if you need product management permissions.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Partial Access Notice */}
+      {(canAdd || canUpdate || canDelete) &&
+        (!canAdd || !canUpdate || !canDelete) && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <div className="flex items-start space-x-2">
+              <Package className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-medium text-yellow-800 dark:text-yellow-200">
+                  Limited Product Access
+                </h4>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                  You have permissions for:{" "}
+                  {[
+                    canAdd && "Adding products",
+                    canUpdate && "Editing products",
+                    canDelete && "Deleting products",
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
+                  .
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -273,24 +361,15 @@ function ProductsPageContent() {
         />
       )}
 
-      {/* Loading State */}
-      {loading && !error && (
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner size="lg" text="Loading products..." />
-        </div>
-      )}
-
       {/* Products Table */}
-      {!loading && (
-        <ProductTable
-          products={products}
-          loading={actionLoading}
-          error={null}
-          onDelete={canDelete ? handleDelete : null}
-          onToggleActive={canUpdate ? handleToggleActive : null}
-          onRefresh={handleRefresh}
-        />
-      )}
+      <ProductTable
+        products={products}
+        loading={actionLoading}
+        error={null}
+        onDelete={canDelete ? handleDelete : null}
+        onToggleActive={canUpdate ? handleToggleActive : null}
+        onRefresh={handleRefresh}
+      />
     </div>
   );
 }

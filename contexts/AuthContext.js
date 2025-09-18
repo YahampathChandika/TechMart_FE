@@ -1,9 +1,9 @@
-// contexts/AuthContext.js
+// contexts/AuthContext.js - COMPLETE WITH PRIVILEGE METHODS
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { authAPI } from "@/lib/api";
-import { tokenManager } from "@/lib/auth";
+import { tokenManager, permissions } from "@/lib/auth";
 import { STORAGE_KEYS, USER_ROLES } from "@/lib/constants";
 
 const AuthContext = createContext();
@@ -285,6 +285,35 @@ export const AuthProvider = ({ children }) => {
     return null;
   };
 
+  // ADDED: Privilege checking methods using the permissions from lib/auth.js
+  const canViewAdminData = () => {
+    return permissions.canViewAdminData(user);
+  };
+
+  const canAddProducts = () => {
+    return permissions.canAddProducts(user);
+  };
+
+  const canUpdateProducts = () => {
+    return permissions.canUpdateProducts(user);
+  };
+
+  const canDeleteProducts = () => {
+    return permissions.canDeleteProducts(user);
+  };
+
+  const canManageUsers = () => {
+    return permissions.canManageUsers(user);
+  };
+
+  const canManageCustomers = () => {
+    return permissions.canManageCustomers(user);
+  };
+
+  const canModifyCustomers = () => {
+    return permissions.canModifyCustomers(user);
+  };
+
   // FIXED: Update user profile - properly handle and pass through errors
   const updateUserProfile = async (updatedData) => {
     if (!user) return { success: false, message: "No user logged in" };
@@ -376,12 +405,21 @@ export const AuthProvider = ({ children }) => {
     updateUserProfile,
     updateCustomerProfile,
 
-    // Helpers
+    // Basic Auth Helpers
     isAuthenticated,
     isAdmin,
     isUser,
     isCustomer,
     getCurrentAuth,
+
+    // ADDED: Permission/Privilege Helpers
+    canViewAdminData,
+    canAddProducts,
+    canUpdateProducts,
+    canDeleteProducts,
+    canManageUsers,
+    canManageCustomers,
+    canModifyCustomers,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
